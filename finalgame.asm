@@ -23,7 +23,7 @@ BLUE = #$AC
 bgcolor		.byte
 frame		.byte
 ; Tophat Sam graphics stuff
-sprite0restinggfx	ds 4
+samrestinggfx	ds 4
 p0gfx		.byte
 p0color		.byte
 
@@ -48,7 +48,12 @@ Start
 ;------------------------------------------------
 
 	; Loading resting 
-
+	lda 	#<TophatSamRestingGfx
+	sta 	samrestinggfx
+	lda 	#>TophatSamRestingGfx
+	sta 	samrestinggfx+1
+	lda 	#SamColors-1,x
+	sta 	COLUP0
 
 ;------------------------------------------------
 ; Vertical Blank

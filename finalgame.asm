@@ -14,6 +14,11 @@
 BLACK = #$00
 BLUE = #$AC
 
+; height is the true height - 1.
+SAM_HEIGHT = #21
+ISLAND_HEIGHT = #9
+SAM_INITIAL_Y = #25
+
 ;------------------------------------------------
 ; RAM
 ;------------------------------------------------
@@ -23,11 +28,13 @@ BLUE = #$AC
 bgcolor		.byte
 frame		.byte
 ; Tophat Sam graphics stuff
-samrestinggfx	ds 4
-p0gfx		.byte
-p0color		.byte
+samrestinggfx	ds 2
+samgfx			.byte
 
+samcolor		.byte
+samY 			.byte
 
+drawsam
 
 	echo [(* - $80)]d, " RAM bytes used"
 
@@ -44,7 +51,7 @@ Start
 	sta		AUDV1
 	
 ;------------------------------------------------
-; INITIALIZE VARS
+; INITIALIZE GAME
 ;------------------------------------------------
 
 	; Loading resting 
@@ -52,8 +59,9 @@ Start
 	sta 	samrestinggfx
 	lda 	#>TophatSamRestingGfx
 	sta 	samrestinggfx+1
-	lda 	#SamColors-1,x
-	sta 	COLUP0
+	
+	lda 	#SAM_INITIAL_Y
+	sta 	samY
 
 ;------------------------------------------------
 ; Vertical Blank
@@ -87,7 +95,7 @@ MainLoop
 ;------------------------------------------------	
 DrawScreen
 ;	ldx		#192+1		 Kernel goes here
-	ldx 	#10+1
+	ldx 	#45+1
 ; DISCLAIMER: make the islands part of the PF, add sprites as the island disasters.
 .scanline
 	lda		bgcolor
@@ -96,6 +104,36 @@ DrawScreen
 	sta 	PF0
 	sta 	PF1
 	sta 	PF2
+	
+	lda 	samgfx
+	sta 	GRP0
+	lda 	samcolor
+	sta 	COLUP0
+	
+	; does sam start on this scan line?
+	cpx 	samY
+	bne 	.loadSam
+	
+	lda 	#SAM_HEIGHT
+	sta 	drawsam
+.loadSam
+	lda 	drawsam
+	cmp 	#$FF ; comparing to FF because when you decrement 0 it goes to FF
+	beq 	.noSam ; If sam is done loading, go down to .noSam
+	tay
+	lda 	(samrestinggfx),y
+	sta 	samgfx
+	lda 	SamColors,y
+	sta 	samcolor
+	
+	dec 	drawsam
+	jmp 	.endSam
+	
+.noSam
+	lda 	#0
+	sta 	samgfx
+.endSam
+	
 	dex
 	sta		WSYNC
 	bne		.scanline
@@ -195,8 +233,8 @@ DrawScreen
 	dex
 	sta 	WSYNC
 	bne 	.drawIsland
-	
-	ldx 	#42
+	; original is 42
+	ldx 	#2
 ; Bottom part - score will go here
 .finalspacer
 	lda 	#0
@@ -295,29 +333,6 @@ SamRightGfx
         .byte #%00111100;$F8
         .byte #%00101000;$F8
         .byte #%00011100;$F8
-        .byte #%01111110;$00
-        .byte #%00111100;$00
-        .byte #%00111100;$00
-SamLeftGfx
-        .byte #%01011100;$80
-        .byte #%00101100;$80
-        .byte #%00101100;$80
-        .byte #%00101100;$80
-        .byte #%00111100;$80
-        .byte #%00111100;$80
-        .byte #%10111101;$80
-        .byte #%10111101;$40
-        .byte #%10111101;$40
-        .byte #%01111110;$40
-        .byte #%01111110;$40
-        .byte #%01111110;$40
-        .byte #%00111100;$40
-        .byte #%00100100;$40
-        .byte #%00011000;$F8
-        .byte #%00101100;$F8
-        .byte #%00111100;$F8
-        .byte #%00010100;$F8
-        .byte #%00111000;$F8
         .byte #%01111110;$00
         .byte #%00111100;$00
         .byte #%00111100;$00

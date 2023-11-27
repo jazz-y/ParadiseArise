@@ -1,7 +1,7 @@
 ;------------------------------------------------
 ;
-; Atari VCS Game 
-; by Author
+; Paradise Arise
+; by Jasmine Diaz Jarquin
 ;
 ;------------------------------------------------
 	processor 	6502
@@ -17,13 +17,13 @@ BLUE = #$AC
 ; height is the true height - 1.
 SAM_HEIGHT = #21
 ISLAND_HEIGHT = #24
-SAM_INITIAL_Y = #25
+SAM_INITIAL_Y = #1
 ISLAND_ROWS = #3
 SPACER_HEIGHT = #19
 ; for now:
 SAM_RANGE = #200
 
-TOP_SPACER_HEIGHT = #5
+TOP_SPACER_HEIGHT = #10
 
 ISLAND1_HEIGHT = #20 ; where island1 starts
 ISLAND1_SPACER_HEIGHT = #10 ; where island1 spacer starts
@@ -135,6 +135,7 @@ CheckJoyDown
 	bit 	SWCHA
 	bne 	.endCheckJoyDown
 	lda 	samY
+	; add some sort of comparison to sam range to control where Sam can go
 	cmp 	#SAM_HEIGHT+2 ; idea: check to see if sam has reached bottom limit
 	beq		.endCheckJoyDown
 	dec 	samY
@@ -216,6 +217,9 @@ DrawScreen
 .endSam1
 	
 	dex
+;	lda 	samrange	 decrementing samrange
+;	dec					
+	dec 	samrange	;
 	sta		WSYNC
 	bne		.topSpacer
 	
@@ -260,6 +264,9 @@ DrawScreen
 .endSam2
 	
 	dex
+;	lda 	samrange	 decrementing samrange
+;	dec					
+	dec 	samrange	;
 	sta		WSYNC
 	bne		.drawIsland1
 	
@@ -302,6 +309,9 @@ DrawScreen
 .endSam3
 	
 	dex
+;	lda 	samrange	 decrementing samrange
+;	dec					
+	dec 	samrange	;
 	sta		WSYNC
 	bne		.spacer1
 	
@@ -347,6 +357,9 @@ DrawScreen
 .endSam4
 	
 	dex
+;	lda 	samrange	 decrementing samrange
+;	dec					
+	dec 	samrange	;
 	sta		WSYNC
 	bne		.drawIsland2
 	
@@ -387,6 +400,9 @@ DrawScreen
 .endSam5
 	
 	dex
+;	lda 	samrange	 decrementing samrange
+;	dec					
+	dec 	samrange	;
 	sta		WSYNC
 	bne		.spacer2
 
@@ -432,6 +448,9 @@ DrawScreen
 .endSam6
 	
 	dex
+;	lda 	samrange	 decrementing samrange
+;	dec					
+	dec 	samrange	;
 	sta		WSYNC
 	bne		.drawIsland3
 ; ///////////////////////////////////
@@ -475,6 +494,9 @@ DrawScreen
 .endSam7
 	
 	dex
+;	lda 	samrange	 decrementing samrange
+;	dec					
+	dec 	samrange	;
 	sta		WSYNC
 	bne		.spacer3
 
@@ -521,6 +543,9 @@ DrawScreen
 .endSam
 	
 	dex
+;	lda 	samrange	 decrementing samrange
+;	dec					
+	dec 	samrange	;
 	sta		WSYNC
 	bne		.drawIsland4
 	
@@ -532,6 +557,11 @@ DrawScreen
 	sta		PF0
 	sta 	PF1
 	sta		PF2
+	
+	lda 	#0
+	sta 	GRP0
+	sta 	COLUP0
+	sta 	REFP0
 	
 	dex
 	sta 	WSYNC
@@ -597,6 +627,7 @@ drawSpacer
 	sta		PF0
 	sta 	PF1
 	sta		PF2
+
 	
 	dec		spacerheight
 	cmp 	#$FF

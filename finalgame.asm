@@ -17,9 +17,10 @@ BLUE = #$AC
 ; height is the true height - 1.
 SAM_HEIGHT = #21
 ISLAND_HEIGHT = #24
-SAM_INITIAL_Y = #1
+SAM_INITIAL_Y = #20
 ISLAND_ROWS = #3
 SPACER_HEIGHT = #19
+LAST_SPACER = #20
 ; for now:
 SAM_RANGE = #200
 
@@ -192,9 +193,13 @@ DrawScreen
 	lda 	samcolor
 	sta 	COLUP0
 	
+	
+	
 .startCheckSam1
 	; does sam start on this scan line?
-	cpx 	samY
+;	cpx 	samY
+	lda 	samY
+	cmp 	samrange
 	bne 	.loadSam1
 	
 	lda 	#SAM_HEIGHT
@@ -217,10 +222,11 @@ DrawScreen
 	sta 	samgfx
 .endSam1
 	
-	dex
+;	dex
 ;	lda 	samrange	 decrementing samrange
 ;	dec					
 	dec 	samrange	;
+	dex
 	sta		WSYNC
 	bne		.topSpacer
 	
@@ -241,7 +247,9 @@ DrawScreen
 ;	bne 	.drawIsland1
 .startCheckSam2
 	; does sam start on this scan line?
-	cpx 	samY
+;	cpx 	samY
+	lda 	samY
+	cmp 	samrange
 	bne 	.loadSam2
 	
 	lda 	#SAM_HEIGHT
@@ -264,10 +272,11 @@ DrawScreen
 	sta 	samgfx
 .endSam2
 	
-	dex
+;	dex
 ;	lda 	samrange	 decrementing samrange
 ;	dec					
 	dec 	samrange	;
+	dex
 	sta		WSYNC
 	bne		.drawIsland1
 	
@@ -286,7 +295,9 @@ DrawScreen
 
 .startCheckSam3
 	; does sam start on this scan line?
-	cpx 	samY
+;	cpx 	samY
+	lda 	samY
+	cmp 	samrange
 	bne 	.loadSam3
 	
 	lda 	#SAM_HEIGHT
@@ -309,10 +320,11 @@ DrawScreen
 	sta 	samgfx
 .endSam3
 	
-	dex
+;	dex
 ;	lda 	samrange	 decrementing samrange
 ;	dec					
 	dec 	samrange	;
+	dex
 	sta		WSYNC
 	bne		.spacer1
 	
@@ -334,7 +346,9 @@ DrawScreen
 
 .startCheckSam4
 	; does sam start on this scan line?
-	cpx 	samY
+;	cpx 	samY
+	lda 	samY
+	cmp 	samrange
 	bne 	.loadSam4
 	
 	lda 	#SAM_HEIGHT
@@ -357,10 +371,11 @@ DrawScreen
 	sta 	samgfx
 .endSam4
 	
-	dex
+;	dex
 ;	lda 	samrange	 decrementing samrange
 ;	dec					
 	dec 	samrange	;
+	dex
 	sta		WSYNC
 	bne		.drawIsland2
 	
@@ -377,7 +392,9 @@ DrawScreen
 
 .startCheckSam5
 	; does sam start on this scan line?
-	cpx 	samY
+;	cpx 	samY
+	lda 	samY
+	cmp 	samrange
 	bne 	.loadSam5
 	
 	lda 	#SAM_HEIGHT
@@ -400,10 +417,11 @@ DrawScreen
 	sta 	samgfx
 .endSam5
 	
-	dex
+;	dex
 ;	lda 	samrange	 decrementing samrange
 ;	dec					
 	dec 	samrange	;
+	dex
 	sta		WSYNC
 	bne		.spacer2
 
@@ -425,7 +443,9 @@ DrawScreen
 ; //////////////// Check Sam 6
 .startCheckSam6
 	; does sam start on this scan line?
-	cpx 	samY
+;	cpx 	samY
+	lda 	samY
+	cmp 	samrange
 	bne 	.loadSam6
 	
 	lda 	#SAM_HEIGHT
@@ -448,10 +468,11 @@ DrawScreen
 	sta 	samgfx
 .endSam6
 	
-	dex
+;	dex
 ;	lda 	samrange	 decrementing samrange
 ;	dec					
 	dec 	samrange	;
+	dex
 	sta		WSYNC
 	bne		.drawIsland3
 ; ///////////////////////////////////
@@ -471,7 +492,9 @@ DrawScreen
 
 .startCheckSam7
 	; does sam start on this scan line?
-	cpx 	samY
+;	cpx 	samY
+	lda 	samY
+	cmp 	samrange
 	bne 	.loadSam7
 	
 	lda 	#SAM_HEIGHT
@@ -494,10 +517,11 @@ DrawScreen
 	sta 	samgfx
 .endSam7
 	
-	dex
+;	dex
 ;	lda 	samrange	 decrementing samrange
 ;	dec					
 	dec 	samrange	;
+	dex
 	sta		WSYNC
 	bne		.spacer3
 
@@ -519,7 +543,9 @@ DrawScreen
 ; start checking for Sam ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 .startCheckSam
 	; does sam start on this scan line?
-	cpx 	samY
+;	cpx 	samY
+	lda 	samY
+	cmp 	samrange
 	bne 	.loadSam
 	
 	lda 	#SAM_HEIGHT
@@ -543,15 +569,16 @@ DrawScreen
 	
 .endSam
 	
-	dex
+;	dex
 ;	lda 	samrange	 decrementing samrange
 ;	dec					
 	dec 	samrange	;
+	dex
 	sta		WSYNC
 	bne		.drawIsland4
 	
 	; original is 42
-	ldx 	#60
+	ldx 	#LAST_SPACER
 ; Bottom part - score will go here
 .finalspacer
 	lda 	#0
@@ -561,7 +588,6 @@ DrawScreen
 	
 	lda 	#0
 	sta 	GRP0
-	sta 	COLUP0
 	
 	dex
 	sta 	WSYNC
@@ -587,57 +613,6 @@ DrawScreen
 ;------------------------------------------------
 ; Subroutines
 ;------------------------------------------------
-Spacer
-	ldx		#21
-.wsynca
-	lda		#0
-	sta		GRP1
-	dex
-	sta		WSYNC
-	bne		.wsynca
-	rts
-	
-drawIslands
-	lda		#ISLAND_ROWS ; 3
-	sta		islandrows
-.beginRow
-	lda 	#ISLAND_HEIGHT ; 9
-	sta 	drawisland
-.startDrawIsland
-	lda 	IslandSprite
-	sta 	PF1
-	sta 	PF2
-	lda 	#0
-	sta 	PF0
-	lda 	#IslandColors-1,x
-	sta 	COLUPF
-;	sta 	WSYNC
-
-; the zero flag isn't being set????/
-	dec		drawisland
-	cmp 	#$FF
-	sta		WSYNC
-	bne 	.startDrawIsland
-	
-drawSpacer
-	lda		#SPACER_HEIGHT
-	sta 	spacerheight
-.startDrawSpacer
-	lda 	#0
-	sta		PF0
-	sta 	PF1
-	sta		PF2
-
-	
-	dec		spacerheight
-	cmp 	#$FF
-	sta		WSYNC
-	bne 	.startDrawSpacer
-	
-	dec 	islandrows
-	cmp		#$FF
-	bne		.beginRow
-	rts
 
 
 

@@ -52,6 +52,7 @@ samgfx			.byte
 samcolor		.byte
 samY 			.byte
 samrange 		.byte
+samtemp			.byte
 
 drawsam			.byte
 
@@ -561,7 +562,6 @@ DrawScreen
 	lda 	#0
 	sta 	GRP0
 	sta 	COLUP0
-	sta 	REFP0
 	
 	dex
 	sta 	WSYNC

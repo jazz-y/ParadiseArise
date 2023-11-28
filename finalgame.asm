@@ -20,7 +20,7 @@ ISLAND_HEIGHT = #24
 SAM_INITIAL_Y = #20
 ISLAND_ROWS = #3
 SPACER_HEIGHT = #19
-LAST_SPACER = #20
+LAST_SPACER = #40
 ; for now:
 SAM_RANGE = #200
 
@@ -195,32 +195,32 @@ DrawScreen
 	
 	
 	
-.startCheckSam1
+;.startCheckSam1
 	; does sam start on this scan line?
 ;	cpx 	samY
-	lda 	samY
-	cmp 	samrange
-	bne 	.loadSam1
+;	lda 	samY
+;	cmp 	samrange
+;	bne 	.loadSam1
 	
-	lda 	#SAM_HEIGHT
-	sta 	drawsam
-.loadSam1
-	lda 	drawsam
-	cmp 	#$FF ; comparing to FF because when you decrement 0 it goes to FF
-	beq 	.noSam1 ; If sam is done loading, go down to .noSam
-	tay
-	lda 	(samrestinggfx),y
-	sta 	samgfx
-	lda 	SamColors,y
-	sta 	samcolor
+;	lda 	#SAM_HEIGHT
+;	sta 	drawsam
+;.loadSam1
+;	lda 	drawsam
+;	cmp 	#$FF ; comparing to FF because when you decrement 0 it goes to FF
+;	beq 	.noSam1 ; If sam is done loading, go down to .noSam
+;	tay
+;	lda 	(samrestinggfx),y
+;	sta 	samgfx
+;	lda 	SamColors,y
+;	sta 	samcolor
 	
-	dec 	drawsam
-	jmp 	.endSam1
+;	dec 	drawsam
+;	jmp 	.endSam1
 	
-.noSam1
-	lda 	#0
-	sta 	samgfx
-.endSam1
+;.noSam1
+;	lda 	#0
+;	sta 	samgfx
+;.endSam1
 	
 ;	dex
 ;	lda 	samrange	 decrementing samrange
@@ -245,32 +245,32 @@ DrawScreen
 ;	dex
 ;	sta 	WSYNC
 ;	bne 	.drawIsland1
-.startCheckSam2
+;.startCheckSam2
 	; does sam start on this scan line?
 ;	cpx 	samY
-	lda 	samY
-	cmp 	samrange
-	bne 	.loadSam2
+;	lda 	samY
+;	cmp 	samrange
+;	bne 	.loadSam2
 	
-	lda 	#SAM_HEIGHT
-	sta 	drawsam
-.loadSam2
-	lda 	drawsam
-	cmp 	#$FF ; comparing to FF because when you decrement 0 it goes to FF
-	beq 	.noSam2 ; If sam is done loading, go down to .noSam
-	tay
-	lda 	(samrestinggfx),y
-	sta 	samgfx
-	lda 	SamColors,y
-	sta 	samcolor
+;	lda 	#SAM_HEIGHT
+;	sta 	drawsam
+;.loadSam2
+;	lda 	drawsam
+;	cmp 	#$FF ; comparing to FF because when you decrement 0 it goes to FF
+;	beq 	.noSam2 ; If sam is done loading, go down to .noSam
+;	tay
+;	lda 	(samrestinggfx),y
+;	sta 	samgfx
+;	lda 	SamColors,y
+;	sta 	samcolor
 	
-	dec 	drawsam
-	jmp 	.endSam2
+;	dec 	drawsam
+;	jmp 	.endSam2
 	
-.noSam2
-	lda 	#0
-	sta 	samgfx
-.endSam2
+;.noSam2
+;	lda 	#0
+;	sta 	samgfx
+;.endSam2
 	
 ;	dex
 ;	lda 	samrange	 decrementing samrange
@@ -293,32 +293,32 @@ DrawScreen
 ;	sta 	WSYNC
 ;	bne 	.spacer1
 
-.startCheckSam3
+;.startCheckSam3
 	; does sam start on this scan line?
 ;	cpx 	samY
-	lda 	samY
-	cmp 	samrange
-	bne 	.loadSam3
+;	lda 	samY
+;	cmp 	samrange
+;	bne 	.loadSam3
 	
-	lda 	#SAM_HEIGHT
-	sta 	drawsam
-.loadSam3
-	lda 	drawsam
-	cmp 	#$FF ; comparing to FF because when you decrement 0 it goes to FF
-	beq 	.noSam3 ; If sam is done loading, go down to .noSam
-	tay
-	lda 	(samrestinggfx),y
-	sta 	samgfx
-	lda 	SamColors,y
-	sta 	samcolor
+;	lda 	#SAM_HEIGHT
+;	sta 	drawsam
+;.loadSam3
+;	lda 	drawsam
+;	cmp 	#$FF ; comparing to FF because when you decrement 0 it goes to FF
+;	beq 	.noSam3 ; If sam is done loading, go down to .noSam
+;	tay
+;	lda 	(samrestinggfx),y
+;	sta 	samgfx
+;	lda 	SamColors,y
+;	sta 	samcolor
 	
-	dec 	drawsam
-	jmp 	.endSam3
+;	dec 	drawsam
+;	jmp 	.endSam3
 	
-.noSam3
-	lda 	#0
-	sta 	samgfx
-.endSam3
+;.noSam3
+;	lda 	#0
+;	sta 	samgfx
+;.endSam3
 	
 ;	dex
 ;	lda 	samrange	 decrementing samrange
@@ -344,32 +344,32 @@ DrawScreen
 ;	sta 	WSYNC
 ;	bne 	.drawIsland2
 
-.startCheckSam4
+;.startCheckSam4
 	; does sam start on this scan line?
 ;	cpx 	samY
-	lda 	samY
-	cmp 	samrange
-	bne 	.loadSam4
+;	lda 	samY
+;	cmp 	samrange
+;	bne 	.loadSam4
 	
-	lda 	#SAM_HEIGHT
-	sta 	drawsam
-.loadSam4
-	lda 	drawsam
-	cmp 	#$FF ; comparing to FF because when you decrement 0 it goes to FF
-	beq 	.noSam4 ; If sam is done loading, go down to .noSam
-	tay
-	lda 	(samrestinggfx),y
-	sta 	samgfx
-	lda 	SamColors,y
-	sta 	samcolor
+;	lda 	#SAM_HEIGHT
+;	sta 	drawsam
+;.loadSam4
+;	lda 	drawsam
+;	cmp 	#$FF ; comparing to FF because when you decrement 0 it goes to FF
+;	beq 	.noSam4 ; If sam is done loading, go down to .noSam
+;	tay
+;	lda 	(samrestinggfx),y
+;	sta 	samgfx
+;	lda 	SamColors,y
+;	sta 	samcolor
 	
-	dec 	drawsam
-	jmp 	.endSam4
+;	dec 	drawsam
+;	jmp 	.endSam4
 	
-.noSam4
-	lda 	#0
-	sta 	samgfx
-.endSam4
+;.noSam4
+;	lda 	#0
+;	sta 	samgfx
+;.endSam4
 	
 ;	dex
 ;	lda 	samrange	 decrementing samrange
@@ -390,32 +390,32 @@ DrawScreen
 ;	sta 	WSYNC
 ;	bne 	.spacer2
 
-.startCheckSam5
+;.startCheckSam5
 	; does sam start on this scan line?
 ;	cpx 	samY
-	lda 	samY
-	cmp 	samrange
-	bne 	.loadSam5
+;	lda 	samY
+;	cmp 	samrange
+;	bne 	.loadSam5
 	
-	lda 	#SAM_HEIGHT
-	sta 	drawsam
-.loadSam5
-	lda 	drawsam
-	cmp 	#$FF ; comparing to FF because when you decrement 0 it goes to FF
-	beq 	.noSam5 ; If sam is done loading, go down to .noSam
-	tay
-	lda 	(samrestinggfx),y
-	sta 	samgfx
-	lda 	SamColors,y
-	sta 	samcolor
+;	lda 	#SAM_HEIGHT
+;	sta 	drawsam
+;.loadSam5
+;	lda 	drawsam
+;	cmp 	#$FF ; comparing to FF because when you decrement 0 it goes to FF
+;	beq 	.noSam5 ; If sam is done loading, go down to .noSam
+;	tay
+;	lda 	(samrestinggfx),y
+;	sta 	samgfx
+;	lda 	SamColors,y
+;	sta 	samcolor
 	
-	dec 	drawsam
-	jmp 	.endSam5
+;	dec 	drawsam
+;	jmp 	.endSam5
 	
-.noSam5
-	lda 	#0
-	sta 	samgfx
-.endSam5
+;.noSam5
+;	lda 	#0
+;	sta 	samgfx
+;.endSam5
 	
 ;	dex
 ;	lda 	samrange	 decrementing samrange
@@ -441,32 +441,32 @@ DrawScreen
 ;	sta 	WSYNC
 ;	bne 	.drawIsland3
 ; //////////////// Check Sam 6
-.startCheckSam6
+;.startCheckSam6
 	; does sam start on this scan line?
 ;	cpx 	samY
-	lda 	samY
-	cmp 	samrange
-	bne 	.loadSam6
+;	lda 	samY
+;	cmp 	samrange
+;	bne 	.loadSam6
 	
-	lda 	#SAM_HEIGHT
-	sta 	drawsam
-.loadSam6
-	lda 	drawsam
-	cmp 	#$FF ; comparing to FF because when you decrement 0 it goes to FF
-	beq 	.noSam6 ; If sam is done loading, go down to .noSam
-	tay
-	lda 	(samrestinggfx),y
-	sta 	samgfx
-	lda 	SamColors,y
-	sta 	samcolor
+;	lda 	#SAM_HEIGHT
+;	sta 	drawsam
+;.loadSam6
+;	lda 	drawsam
+;	cmp 	#$FF ; comparing to FF because when you decrement 0 it goes to FF
+;	beq 	.noSam6 ; If sam is done loading, go down to .noSam
+;	tay
+;	lda 	(samrestinggfx),y
+;	sta 	samgfx
+;	lda 	SamColors,y
+;	sta 	samcolor
 	
-	dec 	drawsam
-	jmp 	.endSam6
+;	dec 	drawsam
+;	jmp 	.endSam6
 	
-.noSam6
-	lda 	#0
-	sta 	samgfx
-.endSam6
+;.noSam6
+;	lda 	#0
+;	sta 	samgfx
+;.endSam6
 	
 ;	dex
 ;	lda 	samrange	 decrementing samrange
@@ -490,32 +490,32 @@ DrawScreen
 ;	sta 	WSYNC
 ;	bne 	.spacer3
 
-.startCheckSam7
+;.startCheckSam7
 	; does sam start on this scan line?
 ;	cpx 	samY
-	lda 	samY
-	cmp 	samrange
-	bne 	.loadSam7
+;	lda 	samY
+;	cmp 	samrange
+;	bne 	.loadSam7
 	
-	lda 	#SAM_HEIGHT
-	sta 	drawsam
-.loadSam7
-	lda 	drawsam
-	cmp 	#$FF ; comparing to FF because when you decrement 0 it goes to FF
-	beq 	.noSam7 ; If sam is done loading, go down to .noSam
-	tay
-	lda 	(samrestinggfx),y
-	sta 	samgfx
-	lda 	SamColors,y
-	sta 	samcolor
+;	lda 	#SAM_HEIGHT
+;	sta 	drawsam
+;.loadSam7
+;	lda 	drawsam
+;	cmp 	#$FF ; comparing to FF because when you decrement 0 it goes to FF
+;	beq 	.noSam7 ; If sam is done loading, go down to .noSam
+;	tay
+;	lda 	(samrestinggfx),y
+;	sta 	samgfx
+;	lda 	SamColors,y
+;	sta 	samcolor
 	
-	dec 	drawsam
-	jmp 	.endSam7
+;	dec 	drawsam
+;	jmp 	.endSam7
 	
-.noSam7
-	lda 	#0
-	sta 	samgfx
-.endSam7
+;.noSam7
+;	lda 	#0
+;	sta 	samgfx
+;.endSam7
 	
 ;	dex
 ;	lda 	samrange	 decrementing samrange
@@ -540,34 +540,34 @@ DrawScreen
 ;	dex
 ;	sta 	WSYNC
 ;	bne 	.drawIsland4
-; start checking for Sam ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-.startCheckSam
+; start checking for Sam ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+.startCheckSam8
 	; does sam start on this scan line?
-;	cpx 	samY
+	cpx 	samY
 	lda 	samY
 	cmp 	samrange
-	bne 	.loadSam
+	bne 	.loadSam8
 	
 	lda 	#SAM_HEIGHT
 	sta 	drawsam
-.loadSam
+.loadSam8
 	lda 	drawsam
 	cmp 	#$FF ; comparing to FF because when you decrement 0 it goes to FF
-	beq 	.noSam ; If sam is done loading, go down to .noSam
+	beq 	.noSam8 ; If sam is done loading, go down to .noSam
 	tay
 	lda 	(samrestinggfx),y
 	sta 	samgfx
 	lda 	SamColors,y
 	sta 	samcolor
-	
+
 	dec 	drawsam
-	jmp 	.endSam
+	jmp 	.endSam8
 	
-.noSam
+.noSam8
 	lda 	#0
 	sta 	samgfx
 	
-.endSam
+.endSam8
 	
 ;	dex
 ;	lda 	samrange	 decrementing samrange
@@ -780,6 +780,298 @@ SamColors
         .byte #$00;
         .byte #$00;
         .byte #$00;
+
+FoodSprites
+CoconutSprite
+        .byte #%00000000;$F0
+        .byte #%00011000;$F0
+        .byte #%00111100;$F0
+        .byte #%01111110;$F0
+        .byte #%01101010;$F0
+        .byte #%00110100;$F0
+        .byte #%00011000;$F0
+        .byte #%00000000;--
+BananaSprite
+        .byte #%00000000;$1A
+        .byte #%00011000;$1A
+        .byte #%00110000;$1A
+        .byte #%00110000;$1A
+        .byte #%00110000;$1A
+        .byte #%00011000;$1A
+        .byte #%00000100;$F0
+        .byte #%00000000;--
+MangoSprite
+        .byte #%00000000;$40
+        .byte #%00111000;$40
+        .byte #%00011100;$40
+        .byte #%00111100;$40
+        .byte #%00111100;$40
+        .byte #%00011000;$D2
+        .byte #%00000110;$D0
+        .byte #%00000000;$D0
+PersimmmonSprite
+        .byte #%00000000;$34
+        .byte #%00011100;$34
+        .byte #%00111110;$34 
+        .byte #%00111110;$34
+        .byte #%00111110;$34
+        .byte #%00101010;$D0
+        .byte #%00011100;$D0
+        .byte #%00000000;$D0
+;---End Graphics Data---
+
+DisasterSprites
+VolcanoSprite
+        .byte #%00100010;$40
+        .byte #%01100110;$40
+        .byte #%01111110;$40
+        .byte #%11101110;$40
+        .byte #%01100010;$40
+        .byte #%11011111;$40
+        .byte #%11010100;$40
+        .byte #%10101011;$F0
+        .byte #%11111110;$F0
+        .byte #%01111110;$F0
+        .byte #%01111110;$F0
+        .byte #%00111100;$F0
+        .byte #%00111100;$F0
+        .byte #%00011100;$F0
+        .byte #%10011001;$40
+        .byte #%00111010;$40
+        .byte #%11101111;$40
+        .byte #%01001010;$40
+        .byte #%00010000;$0E
+        .byte #%00111101;$0E
+        .byte #%00101100;$0E
+        .byte #%01101100;$0E
+        .byte #%01000000;$0E
+        .byte #%10001010;$40
+        .byte #%00100000;$40
+TornadoSprite
+        .byte #%00110000;$FA
+        .byte #%00111110;$FA
+        .byte #%11111011;$FA
+        .byte #%01101110;$FA
+        .byte #%01111100;$FA
+        .byte #%00010000;$0E
+        .byte #%00001000;$0A
+        .byte #%00001100;$0E
+        .byte #%00001000;$0E
+        .byte #%00000100;$0A
+        .byte #%00001110;$0E
+        .byte #%00001100;$0E
+        .byte #%00001010;$0A
+        .byte #%00111110;$0E
+        .byte #%00111100;$0E
+        .byte #%00101000;$0A
+        .byte #%01111110;$0E
+        .byte #%01111100;$0E
+        .byte #%11111000;$04
+        .byte #%01010110;$04
+        .byte #%11101111;$04
+        .byte #%10111011;$04
+        .byte #%01010101;$04
+        .byte #%11111110;$04
+        .byte #%00111000;$04
+LightningSprite
+        .byte #%00000000;$F4
+        .byte #%01111100;$F4
+        .byte #%01111100;$F4
+        .byte #%00100000;$1E
+        .byte #%00110000;$1E
+        .byte #%10010010;$A6
+        .byte #%00011100;$1E
+        .byte #%00000110;$1E
+        .byte #%00001100;$1E
+        .byte #%00110000;$1E
+        .byte #%00010000;$1E
+        .byte #%01010010;$A6
+        .byte #%00001100;$1E
+        .byte #%00000100;$1E
+        .byte #%01000101;$A6
+        .byte #%00011100;$1E
+        .byte #%00110000;$1E
+        .byte #%00100000;$1E
+        .byte #%10000101;$A6
+        .byte #%01111111;$06
+        .byte #%01111111;$06
+        .byte #%11111110;$06
+        .byte #%11111110;$06
+        .byte #%01111110;$06
+        .byte #%00111100;$06
+AlienSprite
+        .byte #%00000000;$9C
+        .byte #%11111111;$9C
+        .byte #%11111111;$8A
+        .byte #%11111111;$88
+        .byte #%11111111;$86
+        .byte #%01111110;$80
+        .byte #%01111110;$9C
+        .byte #%01111110;$8A
+        .byte #%01111110;$88
+        .byte #%01111110;$86
+        .byte #%01111110;$80
+        .byte #%00111100;$9C
+        .byte #%00111100;$8A
+        .byte #%00111100;$88
+        .byte #%00111100;$86
+        .byte #%00011000;$80
+        .byte #%01011010;$04
+        .byte #%11100111;$04
+        .byte #%10111101;$04
+        .byte #%01111110;$04
+        .byte #%00111100;$C8
+        .byte #%01100110;$C8
+        .byte #%01111110;$C8
+        .byte #%01101010;$C8
+        .byte #%10111101;$C8
+
+;---Color Data from PlayerPal 2600---
+FoodColors
+CoconutColor
+        .byte #$F0;
+        .byte #$F0;
+        .byte #$F0;
+        .byte #$F0;
+        .byte #$F0;
+        .byte #$F0;
+        .byte #$F0;
+        .byte #$0E;
+BananaColors
+        .byte #$1A;
+        .byte #$1A;
+        .byte #$1A;
+        .byte #$1A;
+        .byte #$1A;
+        .byte #$1A;
+        .byte #$F0;
+        .byte #$0E;
+MangoColors
+        .byte #$40;
+        .byte #$40;
+        .byte #$40;
+        .byte #$40;
+        .byte #$40;
+        .byte #$D2;
+        .byte #$D0;
+        .byte #$D0;
+PersimmonColors
+        .byte #$34;
+        .byte #$34;
+        .byte #$34;
+        .byte #$34;
+        .byte #$34;
+        .byte #$D0;
+        .byte #$D0;
+        .byte #$D0;
+		
+DisasterColors
+VolcanoColors
+        .byte #$40;
+        .byte #$40;
+        .byte #$40;
+        .byte #$40;
+        .byte #$40;
+        .byte #$40;
+        .byte #$40;
+        .byte #$F0;
+        .byte #$F0;
+        .byte #$F0;
+        .byte #$F0;
+        .byte #$F0;
+        .byte #$F0;
+        .byte #$F0;
+        .byte #$40;
+        .byte #$40;
+        .byte #$40;
+        .byte #$40;
+        .byte #$0E;
+        .byte #$0E;
+        .byte #$0E;
+        .byte #$0E;
+        .byte #$0E;
+        .byte #$40;
+        .byte #$40;
+TornadoColors
+        .byte #$FA;
+        .byte #$FA;
+        .byte #$FA;
+        .byte #$FA;
+        .byte #$FA;
+        .byte #$0E;
+        .byte #$0A;
+        .byte #$0E;
+        .byte #$0E;
+        .byte #$0A;
+        .byte #$0E;
+        .byte #$0E;
+        .byte #$0A;
+        .byte #$0E;
+        .byte #$0E;
+        .byte #$0A;
+        .byte #$0E;
+        .byte #$0E;
+        .byte #$04;
+        .byte #$04;
+        .byte #$04;
+        .byte #$04;
+        .byte #$04;
+        .byte #$04;
+        .byte #$04;
+LightningColors
+        .byte #$F4;
+        .byte #$F4;
+        .byte #$F4;
+        .byte #$1E;
+        .byte #$1E;
+        .byte #$A6;
+        .byte #$1E;
+        .byte #$1E;
+        .byte #$1E;
+        .byte #$1E;
+        .byte #$1E;
+        .byte #$A6;
+        .byte #$1E;
+        .byte #$1E;
+        .byte #$A6;
+        .byte #$1E;
+        .byte #$1E;
+        .byte #$1E;
+        .byte #$A6;
+        .byte #$06;
+        .byte #$06;
+        .byte #$06;
+        .byte #$06;
+        .byte #$06;
+        .byte #$06;
+AlienColors
+        .byte #$9C;
+        .byte #$9C;
+        .byte #$8A;
+        .byte #$88;
+        .byte #$86;
+        .byte #$80;
+        .byte #$9C;
+        .byte #$8A;
+        .byte #$88;
+        .byte #$86;
+        .byte #$80;
+        .byte #$9C;
+        .byte #$8A;
+        .byte #$88;
+        .byte #$86;
+        .byte #$80;
+        .byte #$04;
+        .byte #$04;
+        .byte #$04;
+        .byte #$04;
+        .byte #$C8;
+        .byte #$C8;
+        .byte #$C8;
+        .byte #$C8;
+        .byte #$C8;
+
+;---End Color Data---
 
 ;------------------------------------------------
 ; Interrupt Vectors

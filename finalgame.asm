@@ -15,14 +15,16 @@ BLACK = #$00
 BLUE = #$AC
 
 ; height is the true height - 1.
-SAM_HEIGHT = #21
-ISLAND_HEIGHT = #24
+; Sam actual height is 22 px
+SAM_HEIGHT = #22
+; actual island height is 25
+ISLAND_HEIGHT = #25
 SAM_INITIAL_Y = #20
 ISLAND_ROWS = #3
-SPACER_HEIGHT = #19
-LAST_SPACER = #40
+SPACER_HEIGHT = #9
+LAST_SPACER_HEIGHT = #40
 ; for now:
-SAM_RANGE = #200
+SAM_RANGE = #50
 
 TOP_SPACER_HEIGHT = #10
 
@@ -60,8 +62,18 @@ drawsam			.byte
 ; island graphics stuff
 drawisland		.byte
 islandrows		.byte
+islandheight	.byte
 
+; spacer graphics stuff
 spacerheight	.byte
+spacercounter 	.byte
+islandcounter	.byte
+
+; general 
+counter 		.byte
+
+; condition stuff
+isdrawingisland	.byte
 
 	echo [(* - $80)]d, " RAM bytes used"
 
@@ -82,16 +94,28 @@ Start
 ;------------------------------------------------
 
 	; Loading resting 
-	lda 	#<TophatSamRestingGfx
+	lda 	#<SamRightGfx
 	sta 	samrestinggfx
-	lda 	#>TophatSamRestingGfx
+	lda 	#>SamRightGfx
 	sta 	samrestinggfx+1
 	
 	lda 	#SAM_INITIAL_Y
 	sta 	samY
 	
+	lda 	#SAM_RANGE
+	sta 	samrange
+	
+	lda 	#SPACER_HEIGHT
+	sta 	spacerheight
+	
+	lda 	#ISLAND_HEIGHT
+	sta 	islandheight
+	
 	lda 	#0
-	sta 	PF0
+	sta 	isdrawingisland ; so the spacer is drawn first 
+	
+;	lda 	#0
+;	sta 	PF0
 
 ;------------------------------------------------
 ; Vertical Blank
@@ -114,6 +138,9 @@ MainLoop
 	lda 	#%00000001
 	sta 	CTRLPF
 	
+;.setBands
+;	lda 	
+	
 .checkReset
 	lda 	#%00000001
 	bit 	SWCHB
@@ -129,6 +156,10 @@ CheckJoyUp
 	lda 	samY
 	cmp 	#SAM_RANGE-1
 	beq		.endCheckJoyUp
+	lda 	#<SamUpGfx
+	sta 	samrestinggfx
+	lda 	#>SamUpGfx
+	sta 	samrestinggfx+1
 	inc 	samY
 	inc 	samY
 .endCheckJoyUp
@@ -140,6 +171,10 @@ CheckJoyDown
 	; add some sort of comparison to sam range to control where Sam can go
 	cmp 	#SAM_HEIGHT+2 ; idea: check to see if sam has reached bottom limit
 	beq		.endCheckJoyDown
+	lda 	#<SamDownGfx
+	sta 	samrestinggfx
+	lda 	#>SamDownGfx
+	sta 	samrestinggfx+1
 	dec 	samY
 	dec 	samY
 .endCheckJoyDown
@@ -172,376 +207,57 @@ CheckJoyRight
 ; Kernel
 ;------------------------------------------------	
 DrawScreen
-;	ldx		#192+1		 Kernel goes here
-	lda 	#SAM_RANGE
-	sta 	samrange
-	ldx 	#TOP_SPACER_HEIGHT
-; DISCLAIMER: make the islands part of the PF, add sprites as the island disasters.
-.scanline
-	;cpx 	#SAM_RANGE
-	;bne 	.checkIsland1
-	ldx 	#TOP_SPACER_HEIGHT
-.topSpacer
 	lda		bgcolor
 	sta		COLUBK
-	lda		#0 		; not storing into PF0 - always 0, never changed
+	
+	ldx 	#SAM_RANGE ; this will be the playfield "range"
+	
+; DISCLAIMER: make the islands part of the PF, add sprites as the island disasters.
+.scanline
+	lda 	isdrawingisland ; 1 if drawing island, 0 if not
+	cmp 	#1				 ; I don't know if I have the right syntax here
+	beq 	.drawIsland
+	
+.drawSpacer
+	lda		#0 			; not storing into PF0 - always 0, never changed
 	sta 	PF1
 	sta 	PF2
+	
+	lda 	samgfx	
+	sta 	GRP0
+	lda 	samcolor	; idk if we can just set colors once before starting
+						; the main loop and be done with it
+	sta 	COLUP0
+	
+	inc 	spacercounter
+				
+;	dec 	samrange	
+;	dex
+;	sta		WSYNC
+	jmp 	.startCheckSam8 ; NOTE: change to .startCheckSam later
+	
+.drawIsland
+	lda 	#IslandSprite,x
+	sta 	PF1
+	sta 	PF2
+	lda 	#0
+	sta 	PF0
+	lda 	#IslandColors-1,x
+	sta 	COLUPF
 	
 	lda 	samgfx
 	sta 	GRP0
-	lda 	samcolor
-	sta 	COLUP0
 	
+	inc 	islandcounter
 	
-	
-;.startCheckSam1
-	; does sam start on this scan line?
-;	cpx 	samY
-;	lda 	samY
-;	cmp 	samrange
-;	bne 	.loadSam1
-	
-;	lda 	#SAM_HEIGHT
-;	sta 	drawsam
-;.loadSam1
-;	lda 	drawsam
-;	cmp 	#$FF ; comparing to FF because when you decrement 0 it goes to FF
-;	beq 	.noSam1 ; If sam is done loading, go down to .noSam
-;	tay
-;	lda 	(samrestinggfx),y
-;	sta 	samgfx
-;	lda 	SamColors,y
-;	sta 	samcolor
-	
-;	dec 	drawsam
-;	jmp 	.endSam1
-	
-;.noSam1
-;	lda 	#0
-;	sta 	samgfx
-;.endSam1
-	
+;	echo [*-islandcounter]d ; not sure what this does, but it compiles
+				
+;	dec 	samrange
 ;	dex
-;	lda 	samrange	 decrementing samrange
-;	dec					
-	dec 	samrange	;
-	dex
-	sta		WSYNC
-	bne		.topSpacer
-	
-.checkIsland1
-	ldx 	#ISLAND1_HEIGHT
-	
-.drawIsland1
-	lda 	IslandSprite
-	sta 	PF1
-	sta 	PF2
-	lda 	#0
-	sta 	PF0
-	lda 	#IslandColors-1,x
-	sta 	COLUPF
-	
-;	dex
-;	sta 	WSYNC
-;	bne 	.drawIsland1
-;.startCheckSam2
-	; does sam start on this scan line?
-;	cpx 	samY
-;	lda 	samY
-;	cmp 	samrange
-;	bne 	.loadSam2
-	
-;	lda 	#SAM_HEIGHT
-;	sta 	drawsam
-;.loadSam2
-;	lda 	drawsam
-;	cmp 	#$FF ; comparing to FF because when you decrement 0 it goes to FF
-;	beq 	.noSam2 ; If sam is done loading, go down to .noSam
-;	tay
-;	lda 	(samrestinggfx),y
-;	sta 	samgfx
-;	lda 	SamColors,y
-;	sta 	samcolor
-	
-;	dec 	drawsam
-;	jmp 	.endSam2
-	
-;.noSam2
-;	lda 	#0
-;	sta 	samgfx
-;.endSam2
-	
-;	dex
-;	lda 	samrange	 decrementing samrange
-;	dec					
-	dec 	samrange	;
-	dex
-	sta		WSYNC
-	bne		.drawIsland1
-	
-.checkSpacer1
-	ldx 	#ISLAND1_SPACER_HEIGHT
-	
-.spacer1
-	lda 	#0
-	sta		PF0
-	sta 	PF1
-	sta		PF2
-	
-;	dex
-;	sta 	WSYNC
-;	bne 	.spacer1
+;	sta		WSYNC
 
-;.startCheckSam3
-	; does sam start on this scan line?
-;	cpx 	samY
-;	lda 	samY
-;	cmp 	samrange
-;	bne 	.loadSam3
-	
-;	lda 	#SAM_HEIGHT
-;	sta 	drawsam
-;.loadSam3
-;	lda 	drawsam
-;	cmp 	#$FF ; comparing to FF because when you decrement 0 it goes to FF
-;	beq 	.noSam3 ; If sam is done loading, go down to .noSam
-;	tay
-;	lda 	(samrestinggfx),y
-;	sta 	samgfx
-;	lda 	SamColors,y
-;	sta 	samcolor
-	
-;	dec 	drawsam
-;	jmp 	.endSam3
-	
-;.noSam3
-;	lda 	#0
-;	sta 	samgfx
-;.endSam3
-	
-;	dex
-;	lda 	samrange	 decrementing samrange
-;	dec					
-	dec 	samrange	;
-	dex
-	sta		WSYNC
-	bne		.spacer1
-	
-.checkIsland2
-	ldx 	#ISLAND2_HEIGHT
-	
-.drawIsland2
-	lda 	IslandSprite
-	sta 	PF1
-	sta 	PF2
-	lda 	#0
-	sta 	PF0
-	lda 	#IslandColors-1,x
-	sta 	COLUPF
-; add in sam stuff somewhere around here later
-;	dex
-;	sta 	WSYNC
-;	bne 	.drawIsland2
-
-;.startCheckSam4
-	; does sam start on this scan line?
-;	cpx 	samY
-;	lda 	samY
-;	cmp 	samrange
-;	bne 	.loadSam4
-	
-;	lda 	#SAM_HEIGHT
-;	sta 	drawsam
-;.loadSam4
-;	lda 	drawsam
-;	cmp 	#$FF ; comparing to FF because when you decrement 0 it goes to FF
-;	beq 	.noSam4 ; If sam is done loading, go down to .noSam
-;	tay
-;	lda 	(samrestinggfx),y
-;	sta 	samgfx
-;	lda 	SamColors,y
-;	sta 	samcolor
-	
-;	dec 	drawsam
-;	jmp 	.endSam4
-	
-;.noSam4
-;	lda 	#0
-;	sta 	samgfx
-;.endSam4
-	
-;	dex
-;	lda 	samrange	 decrementing samrange
-;	dec					
-	dec 	samrange	;
-	dex
-	sta		WSYNC
-	bne		.drawIsland2
-	
-.checkSpacer2
-	ldx 	#ISLAND2_SPACER_HEIGHT
-
-.spacer2
-	lda 	#0
-	sta 	PF1
-	sta		PF2	
-;	dex
-;	sta 	WSYNC
-;	bne 	.spacer2
-
-;.startCheckSam5
-	; does sam start on this scan line?
-;	cpx 	samY
-;	lda 	samY
-;	cmp 	samrange
-;	bne 	.loadSam5
-	
-;	lda 	#SAM_HEIGHT
-;	sta 	drawsam
-;.loadSam5
-;	lda 	drawsam
-;	cmp 	#$FF ; comparing to FF because when you decrement 0 it goes to FF
-;	beq 	.noSam5 ; If sam is done loading, go down to .noSam
-;	tay
-;	lda 	(samrestinggfx),y
-;	sta 	samgfx
-;	lda 	SamColors,y
-;	sta 	samcolor
-	
-;	dec 	drawsam
-;	jmp 	.endSam5
-	
-;.noSam5
-;	lda 	#0
-;	sta 	samgfx
-;.endSam5
-	
-;	dex
-;	lda 	samrange	 decrementing samrange
-;	dec					
-	dec 	samrange	;
-	dex
-	sta		WSYNC
-	bne		.spacer2
-
-.checkIsland3
-	ldx 	#ISLAND3_HEIGHT
-
-.drawIsland3
-	lda 	IslandSprite
-	sta 	PF1
-	sta 	PF2
-	lda 	#0
-	sta 	PF0
-	lda 	#IslandColors-1,x
-	sta 	COLUPF
-	
-;	dex
-;	sta 	WSYNC
-;	bne 	.drawIsland3
-; //////////////// Check Sam 6
-;.startCheckSam6
-	; does sam start on this scan line?
-;	cpx 	samY
-;	lda 	samY
-;	cmp 	samrange
-;	bne 	.loadSam6
-	
-;	lda 	#SAM_HEIGHT
-;	sta 	drawsam
-;.loadSam6
-;	lda 	drawsam
-;	cmp 	#$FF ; comparing to FF because when you decrement 0 it goes to FF
-;	beq 	.noSam6 ; If sam is done loading, go down to .noSam
-;	tay
-;	lda 	(samrestinggfx),y
-;	sta 	samgfx
-;	lda 	SamColors,y
-;	sta 	samcolor
-	
-;	dec 	drawsam
-;	jmp 	.endSam6
-	
-;.noSam6
-;	lda 	#0
-;	sta 	samgfx
-;.endSam6
-	
-;	dex
-;	lda 	samrange	 decrementing samrange
-;	dec					
-	dec 	samrange	;
-	dex
-	sta		WSYNC
-	bne		.drawIsland3
-; ///////////////////////////////////
-
-.checkSpacer3
-	ldx 	#ISLAND3_SPACER_HEIGHT
-
-.spacer3
-	lda 	#0
-	sta		PF0
-	sta 	PF1
-	sta		PF2
-	
-;	dex
-;	sta 	WSYNC
-;	bne 	.spacer3
-
-;.startCheckSam7
-	; does sam start on this scan line?
-;	cpx 	samY
-;	lda 	samY
-;	cmp 	samrange
-;	bne 	.loadSam7
-	
-;	lda 	#SAM_HEIGHT
-;	sta 	drawsam
-;.loadSam7
-;	lda 	drawsam
-;	cmp 	#$FF ; comparing to FF because when you decrement 0 it goes to FF
-;	beq 	.noSam7 ; If sam is done loading, go down to .noSam
-;	tay
-;	lda 	(samrestinggfx),y
-;	sta 	samgfx
-;	lda 	SamColors,y
-;	sta 	samcolor
-	
-;	dec 	drawsam
-;	jmp 	.endSam7
-	
-;.noSam7
-;	lda 	#0
-;	sta 	samgfx
-;.endSam7
-	
-;	dex
-;	lda 	samrange	 decrementing samrange
-;	dec					
-	dec 	samrange	;
-	dex
-	sta		WSYNC
-	bne		.spacer3
-
-.checkIsland4
-	ldx 	#ISLAND4_HEIGHT
-
-.drawIsland4
-	lda 	IslandSprite
-	sta 	PF1
-	sta 	PF2
-	lda 	#0
-	sta 	PF0
-	lda 	#IslandColors-1,x
-	sta 	COLUPF
-	
-;	dex
-;	sta 	WSYNC
-;	bne 	.drawIsland4
-; start checking for Sam ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-.startCheckSam8
+; NOTE: Change names to .(blahblah)Sam later
+.startCheckSam8 ; total cycles: 
 	; does sam start on this scan line?
 	cpx 	samY
 	lda 	samY
@@ -553,7 +269,7 @@ DrawScreen
 .loadSam8
 	lda 	drawsam
 	cmp 	#$FF ; comparing to FF because when you decrement 0 it goes to FF
-	beq 	.noSam8 ; If sam is done loading, go down to .noSam
+	beq 	.noSam8 ; If Sam is done loading, go down to .noSam
 	tay
 	lda 	(samrestinggfx),y
 	sta 	samgfx
@@ -572,22 +288,56 @@ DrawScreen
 ;	dex
 ;	lda 	samrange	 decrementing samrange
 ;	dec					
-	dec 	samrange	;
+;	dec 	samrange	;
+	
+.setIsDrawingIsland
+	lda 	isdrawingisland
+	cmp 	#0
+	beq 	.checkSpacerCounter
+	
+.checkIslandCounter
+	lda 	islandcounter
+	cmp 	#ISLAND_HEIGHT+1
+	bne		.skipIsDrawingIslandSetting ; if the spacer limit hasn't been reached
+										; then don't start drawing islands yet
+	lda 	#0
+	sta 	isdrawingisland				; set draw island to true
+	sta 	islandcounter
+	
+.skipIsDrawingIslandSetting
+
+	jmp 	.endCheckCounters
+
+.checkSpacerCounter
+	lda 	spacercounter
+	cmp 	#SPACER_HEIGHT+1
+	bne 	.skipIsDrawingIslandSetting2
+	
+	lda 	#1
+	sta 	isdrawingisland
+	lda 	#0
+	sta 	spacercounter
+.skipIsDrawingIslandSetting2
+.endCheckCounters
+	
 	dex
+;	sta 	WSYNC
 	sta		WSYNC
-	bne		.drawIsland4
+	bne		.scanline
 	
 	; original is 42
-	ldx 	#LAST_SPACER
+	ldx 	#LAST_SPACER_HEIGHT
 ; Bottom part - score will go here
 .finalspacer
 	lda 	#0
-	sta		PF0
 	sta 	PF1
-	sta		PF2
+	sta		PF2 ; if islands are "displaying," turn off
+	sta 	PF0
 	
 	lda 	#0
-	sta 	GRP0
+	sta 	GRP0	; turn player graphics off
+	
+	; add hunger bar here
 	
 	dex
 	sta 	WSYNC
@@ -603,6 +353,7 @@ DrawScreen
     sta		TIM64T
 
 	;***** Overscan Code goes here
+	
 
 .waitForOverscan
 	lda     INTIM
@@ -754,6 +505,10 @@ SamDownGfx
         .byte #%00111100;$00
 ;---End Graphics Data---
 
+SamFrames
+	.byte <SamRightGfx
+	.byte <SamUpGfx
+	.byte <SamDownGfx
 
 ;---Color Data from PlayerPal 2600---
 

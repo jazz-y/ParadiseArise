@@ -22,9 +22,9 @@ ISLAND_HEIGHT = #25
 SAM_INITIAL_Y = #20
 ISLAND_ROWS = #3
 SPACER_HEIGHT = #9
-LAST_SPACER_HEIGHT = #40
-; for now:
-SAM_RANGE = #50
+LAST_SPACER_HEIGHT = #2
+; for now
+SAM_RANGE = #194 ; 195 is the true value rn
 
 TOP_SPACER_HEIGHT = #10
 
@@ -63,6 +63,7 @@ drawsam			.byte
 drawisland		.byte
 islandrows		.byte
 islandheight	.byte
+islandsprite	.byte
 
 ; spacer graphics stuff
 spacerheight	.byte
@@ -92,6 +93,12 @@ Start
 ;------------------------------------------------
 ; INITIALIZE GAME
 ;------------------------------------------------
+;	ldx 	#12
+;.initRAM
+;	lda 	IslandSprite,x
+;	sta 	islandsprite,x
+;	dex
+;	bne 	.initRAM
 
 	; Loading resting 
 	lda 	#<SamRightGfx
@@ -200,55 +207,57 @@ CheckJoyRight
 	lda		INTIM
 	bne		.waitForVBlank
 	sta		WSYNC
-	sta		VBLANK
 	sta 	HMOVE ; strobing HMOVE
-
+	sta		VBLANK
+	
 ;------------------------------------------------
 ; Kernel
 ;------------------------------------------------	
 DrawScreen
-	lda		bgcolor
-	sta		COLUBK
+
 	
-	ldx 	#SAM_RANGE ; this will be the playfield "range"
+	ldx 	#SAM_RANGE ; this will be the playfi-1eld "range"
 	
 ; DISCLAIMER: make the islands part of the PF, add sprites as the island disasters.
 .scanline
-	lda 	isdrawingisland ; 1 if drawing island, 0 if not
-	cmp 	#1				 ; I don't know if I have the right syntax here
-	beq 	.drawIsland
+;	lda 	isdrawingisland ; 1 if drawing island, 0 if not
+;	cmp 	#1				 ; I don't know if I have the right syntax here
+;	beq 	.drawIsland
 	
 .drawSpacer
-	lda		#0 			; not storing into PF0 - always 0, never changed
-	sta 	PF1
-	sta 	PF2
-	
+;	lda		#0 			; not storing into PF0 - always 0, never changed
+;	sta 	PF1
+;	sta 	PF2
+	lda		bgcolor
+	sta		COLUBK
 	lda 	samgfx	
 	sta 	GRP0
 	lda 	samcolor	; idk if we can just set colors once before starting
 						; the main loop and be done with it
 	sta 	COLUP0
 	
-	inc 	spacercounter
+;	inc 	spacercounter
 				
 ;	dec 	samrange	
 ;	dex
 ;	sta		WSYNC
-	jmp 	.startCheckSam8 ; NOTE: change to .startCheckSam later
+;	jmp 	.startCheckSam8 ; NOTE: change to .startCheckSam later
 	
 .drawIsland
-	lda 	#IslandSprite,x
+	lda 	#IslandColors-1,x
+	sta 	COLUPF
+	lda 	#IslandSprite-1,x
 	sta 	PF1
 	sta 	PF2
 	lda 	#0
 	sta 	PF0
-	lda 	#IslandColors-1,x
-	sta 	COLUPF
 	
-	lda 	samgfx
-	sta 	GRP0
+;	lda 	samgfx
+;	sta 	GRP0
+;	lda 	samcolor
+;	sta 	COLUP0
 	
-	inc 	islandcounter
+;	inc 	islandcounter
 	
 ;	echo [*-islandcounter]d ; not sure what this does, but it compiles
 				
@@ -257,75 +266,77 @@ DrawScreen
 ;	sta		WSYNC
 
 ; NOTE: Change names to .(blahblah)Sam later
-.startCheckSam8 ; total cycles: 
-	; does sam start on this scan line?
-	cpx 	samY
-	lda 	samY
-	cmp 	samrange
-	bne 	.loadSam8
+;.startCheckSam8 ; total cycles: 
+;	; does sam start on this scan line?
+;	cpx 	samY
+;	lda 	samY
+;	cmp 	samrange
+;	bne 	.loadSam8
+;	
+;	lda 	#SAM_HEIGHT
+;	sta 	drawsam
+;.loadSam8
+;	lda 	drawsam
+;	cmp 	#$FF ; comparing to FF because when you decrement 0 it goes to FF
+;	beq 	.noSam8 ; If Sam is done loading, go down to .noSam
+;	tay
+;	lda 	(samrestinggfx),y
+;	sta 	samgfx
+;	lda 	SamColors,y
+;	sta 	samcolor
+;
+;	dec 	drawsam
+;	jmp 	.endSam8
 	
-	lda 	#SAM_HEIGHT
-	sta 	drawsam
-.loadSam8
-	lda 	drawsam
-	cmp 	#$FF ; comparing to FF because when you decrement 0 it goes to FF
-	beq 	.noSam8 ; If Sam is done loading, go down to .noSam
-	tay
-	lda 	(samrestinggfx),y
-	sta 	samgfx
-	lda 	SamColors,y
-	sta 	samcolor
-
-	dec 	drawsam
-	jmp 	.endSam8
+;.noSam8
+;	lda 	#0
+;	sta 	samgfx
 	
-.noSam8
-	lda 	#0
-	sta 	samgfx
-	
-.endSam8
+;.endSam8
 	
 ;	dex
 ;	lda 	samrange	 decrementing samrange
 ;	dec					
 ;	dec 	samrange	;
 	
-.setIsDrawingIsland
-	lda 	isdrawingisland
-	cmp 	#0
-	beq 	.checkSpacerCounter
+;.setIsDrawingIsland
+;	lda 	isdrawingisland
+;	cmp 	#0
+;	beq 	.checkSpacerCounter
 	
-.checkIslandCounter
-	lda 	islandcounter
-	cmp 	#ISLAND_HEIGHT+1
-	bne		.skipIsDrawingIslandSetting ; if the spacer limit hasn't been reached
+;.checkIslandCounter
+;	lda 	islandcounter
+;	cmp 	#ISLAND_HEIGHT+1
+;	bne		.skipIsDrawingIslandSetting ; if the spacer limit hasn't been reached
 										; then don't start drawing islands yet
-	lda 	#0
-	sta 	isdrawingisland				; set draw island to true
-	sta 	islandcounter
+;	lda 	#0
+;	sta 	isdrawingisland				; set draw island to true
+;	sta 	islandcounter
 	
-.skipIsDrawingIslandSetting
+;.skipIsDrawingIslandSetting
+;
+;	jmp 	.endCheckCounters
 
-	jmp 	.endCheckCounters
-
-.checkSpacerCounter
-	lda 	spacercounter
-	cmp 	#SPACER_HEIGHT+1
-	bne 	.skipIsDrawingIslandSetting2
+;.checkSpacerCounter
+;	lda 	spacercounter
+;	cmp 	#SPACER_HEIGHT+1
+;	bne 	.skipIsDrawingIslandSetting2
 	
-	lda 	#1
-	sta 	isdrawingisland
-	lda 	#0
-	sta 	spacercounter
-.skipIsDrawingIslandSetting2
-.endCheckCounters
+;	lda 	#1
+;	sta 	isdrawingisland
+;	lda 	#0
+;	sta 	spacercounter
+;.skipIsDrawingIslandSetting2
+;.endCheckCounters
 	
 	dex
+	sta 	WSYNC
+;	sta		WSYNC
 ;	sta 	WSYNC
-	sta		WSYNC
 	bne		.scanline
 	
 	; original is 42
+	
 	ldx 	#LAST_SPACER_HEIGHT
 ; Bottom part - score will go here
 .finalspacer
@@ -333,6 +344,7 @@ DrawScreen
 	sta 	PF1
 	sta		PF2 ; if islands are "displaying," turn off
 	sta 	PF0
+	sta 	COLUPF
 	
 	lda 	#0
 	sta 	GRP0	; turn player graphics off
@@ -353,7 +365,7 @@ DrawScreen
     sta		TIM64T
 
 	;***** Overscan Code goes here
-	
+
 
 .waitForOverscan
 	lda     INTIM
@@ -372,64 +384,406 @@ DrawScreen
 ;------------------------------------------------
 	
 ;---Graphics Data from PlayerPal 2600---
-
+; height: (25 * 6) + (10 * 5) + 20 = 150 + 50 + 25 = 225
 IslandSprite
 		.byte #%01111110
         .byte #%01111110
         .byte #%01111110
         .byte #%01111110
-        .byte #%01111110
+        .byte #%01111110;
 		.byte #%01111110
         .byte #%01111110
         .byte #%01111110
         .byte #%01111110
+        .byte #%01111110;
         .byte #%01111110
         .byte #%01111110
         .byte #%01111110
         .byte #%01111110
+        .byte #%01111110;
         .byte #%01111110
         .byte #%01111110
         .byte #%01111110
         .byte #%01111110
+        .byte #%01111110;
         .byte #%01111110
         .byte #%01111110
         .byte #%01111110
         .byte #%01111110
+        .byte #%01111110;6 * 5 = 30
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0;
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0;5 * 2 = 10
+		.byte #%01111110
+        .byte #%01111110
+        .byte #%01111110
+        .byte #%01111110
+        .byte #%01111110;
+		.byte #%01111110
+        .byte #%01111110
+        .byte #%01111110
+        .byte #%01111110
+        .byte #%01111110;
         .byte #%01111110
         .byte #%01111110
         .byte #%01111110
         .byte #%01111110
+        .byte #%01111110;
+        .byte #%01111110
+        .byte #%01111110
+        .byte #%01111110
+        .byte #%01111110
+        .byte #%01111110;
+        .byte #%01111110
+        .byte #%01111110
+        .byte #%01111110
+        .byte #%01111110
+        .byte #%01111110;5 * 5 = 25
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0;
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0;5
+		.byte #%01111110
+        .byte #%01111110
+        .byte #%01111110
+        .byte #%01111110
+        .byte #%01111110;
+		.byte #%01111110
+        .byte #%01111110
+        .byte #%01111110
+        .byte #%01111110
+        .byte #%01111110;
+        .byte #%01111110
+        .byte #%01111110
+        .byte #%01111110
+        .byte #%01111110
+        .byte #%01111110;
+        .byte #%01111110
+        .byte #%01111110
+        .byte #%01111110
+        .byte #%01111110
+        .byte #%01111110;
+        .byte #%01111110
+        .byte #%01111110
+        .byte #%01111110
+        .byte #%01111110
+        .byte #%01111110;4 * 5 = 20
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0;
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0;3
+		.byte #%01111110
+        .byte #%01111110
+        .byte #%01111110
+        .byte #%01111110
+        .byte #%01111110;
+		.byte #%01111110
+        .byte #%01111110
+        .byte #%01111110
+        .byte #%01111110
+        .byte #%01111110;
+        .byte #%01111110
+        .byte #%01111110
+        .byte #%01111110
+        .byte #%01111110
+        .byte #%01111110;
+        .byte #%01111110
+        .byte #%01111110
+        .byte #%01111110
+        .byte #%01111110
+        .byte #%01111110;
+        .byte #%01111110
+        .byte #%01111110
+        .byte #%01111110
+        .byte #%01111110
+        .byte #%01111110;3
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0;
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0;2
+		.byte #%01111110
+        .byte #%01111110
+        .byte #%01111110
+        .byte #%01111110
+        .byte #%01111110;
+		.byte #%01111110
+        .byte #%01111110
+        .byte #%01111110
+        .byte #%01111110
+        .byte #%01111110;
+        .byte #%01111110
+        .byte #%01111110
+        .byte #%01111110
+        .byte #%01111110
+        .byte #%01111110;
+        .byte #%01111110
+        .byte #%01111110
+        .byte #%01111110
+        .byte #%01111110
+        .byte #%01111110;
+        .byte #%01111110
+        .byte #%01111110
+        .byte #%01111110
+        .byte #%01111110
+        .byte #%01111110;2
+		.byte #0;
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0;
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0;
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0;
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0;
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0;
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0
 ;---End Graphics Data---
 
 
 ;---Color Data from PlayerPal 2600---
 
 IslandColors
-        .byte #$FA;
+        .byte #$FA;;
         .byte #$C8;
         .byte #$C8;
         .byte #$C8;
         .byte #$C8;
+        .byte #$C8;;
         .byte #$C8;
         .byte #$C8;
         .byte #$C8;
         .byte #$C8;
-        .byte #$C8;
-		.byte #$C8;
-        .byte #$C8;
+		.byte #$C8;;
         .byte #$C8;
         .byte #$C8;
         .byte #$C8;
         .byte #$C8;
-        .byte #$C8;
-        .byte #$C8;
-        .byte #$C8;
-		.byte #$C8;
-		.byte #$C8;
+        .byte #$C8;;
         .byte #$C8;
         .byte #$C8;
         .byte #$C8;
 		.byte #$C8;
+		.byte #$C8;;
+        .byte #$C8;
+        .byte #$C8;
+        .byte #$C8;
+		.byte #$C8;
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0;
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0;5
+        .byte #$FA;;
+        .byte #$C8;
+        .byte #$C8;
+        .byte #$C8;
+        .byte #$C8;
+        .byte #$C8;;
+        .byte #$C8;
+        .byte #$C8;
+        .byte #$C8;
+        .byte #$C8;
+		.byte #$C8;;
+        .byte #$C8;
+        .byte #$C8;
+        .byte #$C8;
+        .byte #$C8;
+        .byte #$C8;;
+        .byte #$C8;
+        .byte #$C8;
+        .byte #$C8;
+		.byte #$C8;
+		.byte #$C8;;
+        .byte #$C8;
+        .byte #$C8;
+        .byte #$C8;
+		.byte #$C8;
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0;
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0;4
+        .byte #$FA;;
+        .byte #$C8;
+        .byte #$C8;
+        .byte #$C8;
+        .byte #$C8;
+        .byte #$C8;;
+        .byte #$C8;
+        .byte #$C8;
+        .byte #$C8;
+        .byte #$C8;
+		.byte #$C8;;
+        .byte #$C8;
+        .byte #$C8;
+        .byte #$C8;
+        .byte #$C8;
+        .byte #$C8;;
+        .byte #$C8;
+        .byte #$C8;
+        .byte #$C8;
+		.byte #$C8;
+		.byte #$C8;;
+        .byte #$C8;
+        .byte #$C8;
+        .byte #$C8;
+		.byte #$C8;
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0;
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0;3
+        .byte #$FA;;
+        .byte #$C8;
+        .byte #$C8;
+        .byte #$C8;
+        .byte #$C8;
+        .byte #$C8;;
+        .byte #$C8;
+        .byte #$C8;
+        .byte #$C8;
+        .byte #$C8;
+		.byte #$C8;;
+        .byte #$C8;
+        .byte #$C8;
+        .byte #$C8;
+        .byte #$C8;
+        .byte #$C8;;
+        .byte #$C8;
+        .byte #$C8;
+        .byte #$C8;
+		.byte #$C8;
+		.byte #$C8;;
+        .byte #$C8;
+        .byte #$C8;
+        .byte #$C8;
+		.byte #$C8;
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0;
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0;2
+        .byte #$FA;;
+        .byte #$C8;
+        .byte #$C8;
+        .byte #$C8;
+        .byte #$C8;
+        .byte #$C8;;
+        .byte #$C8;
+        .byte #$C8;
+        .byte #$C8;
+        .byte #$C8;
+		.byte #$C8;;
+        .byte #$C8;
+        .byte #$C8;
+        .byte #$C8;
+        .byte #$C8;
+        .byte #$C8;;
+        .byte #$C8;
+        .byte #$C8;
+        .byte #$C8;
+		.byte #$C8;
+		.byte #$C8;;
+        .byte #$C8;
+        .byte #$C8;
+        .byte #$C8;
+		.byte #$C8;
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0;
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0;
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0;
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0;
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0;
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0
+	
+
 ;---End Color Data---
 
 ;---Graphics Data from PlayerPal 2600---

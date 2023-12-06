@@ -24,7 +24,7 @@ ISLAND_ROWS = #3
 SPACER_HEIGHT = #9
 LAST_SPACER_HEIGHT = #2
 ; for now
-SAM_RANGE = #194 ; 195 is the true value rn
+SAM_RANGE = #199 ; 195 is the true value rn
 
 TOP_SPACER_HEIGHT = #10
 
@@ -217,7 +217,6 @@ DrawScreen
 
 	
 	ldx 	#SAM_RANGE ; this will be the playfi-1eld "range"
-	
 ; DISCLAIMER: make the islands part of the PF, add sprites as the island disasters.
 .scanline
 ;	lda 	isdrawingisland ; 1 if drawing island, 0 if not
@@ -230,11 +229,7 @@ DrawScreen
 ;	sta 	PF2
 	lda		bgcolor
 	sta		COLUBK
-	lda 	samgfx	
-	sta 	GRP0
-	lda 	samcolor	; idk if we can just set colors once before starting
-						; the main loop and be done with it
-	sta 	COLUP0
+
 	
 ;	inc 	spacercounter
 				
@@ -251,6 +246,12 @@ DrawScreen
 	sta 	PF2
 	lda 	#0
 	sta 	PF0
+	
+	lda 	samgfx	
+	sta 	GRP0
+	lda 	samcolor	; idk if we can just set colors once before starting
+						; the main loop and be done with it
+	sta 	COLUP0
 	
 ;	lda 	samgfx
 ;	sta 	GRP0
@@ -365,7 +366,8 @@ DrawScreen
     sta		TIM64T
 
 	;***** Overscan Code goes here
-
+	lda 	#0
+	sta 	GRP0
 
 .waitForOverscan
 	lda     INTIM
@@ -386,6 +388,7 @@ DrawScreen
 ;---Graphics Data from PlayerPal 2600---
 ; height: (25 * 6) + (10 * 5) + 20 = 150 + 50 + 25 = 225
 IslandSprite
+		.byte #%01111110
 		.byte #%01111110
         .byte #%01111110
         .byte #%01111110
@@ -581,6 +584,10 @@ IslandSprite
 		.byte #0
 		.byte #0
 		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0
 ;---End Graphics Data---
 
 
@@ -611,6 +618,7 @@ IslandColors
         .byte #$C8;
         .byte #$C8;
         .byte #$C8;
+		.byte #$C8;
 		.byte #$C8;
 		.byte #0
 		.byte #0
@@ -777,6 +785,10 @@ IslandColors
 		.byte #0
 		.byte #0
 		.byte #0;
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0
 		.byte #0
 		.byte #0
 		.byte #0

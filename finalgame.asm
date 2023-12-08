@@ -16,15 +16,15 @@ BLUE = #$AC
 
 ; height is the true height - 1.
 ; Sam actual height is 22 px
-SAM_HEIGHT = #22
+SAM_HEIGHT = #21
 ; actual island height is 25
 ISLAND_HEIGHT = #25
-SAM_INITIAL_Y = #20
+SAM_INITIAL_Y = #30
 ISLAND_ROWS = #3
 SPACER_HEIGHT = #9
 LAST_SPACER_HEIGHT = #2
 ; for now
-SAM_RANGE = #199 ; 195 is the true value rn
+SAM_RANGE = #199 ; 200 is the true value rn
 
 TOP_SPACER_HEIGHT = #10
 
@@ -144,10 +144,7 @@ MainLoop
 	sta		bgcolor
 	lda 	#%00000001
 	sta 	CTRLPF
-	
-;.setBands
-;	lda 	
-	
+
 .checkReset
 	lda 	#%00000001
 	bit 	SWCHB
@@ -167,7 +164,7 @@ CheckJoyUp
 	sta 	samrestinggfx
 	lda 	#>SamUpGfx
 	sta 	samrestinggfx+1
-	inc 	samY
+;	inc 	samY
 	inc 	samY
 .endCheckJoyUp
 CheckJoyDown
@@ -183,24 +180,50 @@ CheckJoyDown
 	lda 	#>SamDownGfx
 	sta 	samrestinggfx+1
 	dec 	samY
-	dec 	samY
+;	dec 	samY
 .endCheckJoyDown
 CheckJoyLeft
 	lda 	#%01000000
 	bit 	SWCHA
-	bne 	.endCheckJoyLeft
+	bne 	.noMoveLeft	; if not using left joystick, don't wrtie to hmove (don't make object move)
+	
+	lda 	#<SamRightGfx
+	sta 	samrestinggfx
+	lda 	#>SamRightGfx
+	sta 	samrestinggfx+1
+	
 	lda 	#%00001000
 	sta 	REFP0
-	lda 	#%00100000 ; horizontal motion from table (stella guide)
+	lda 	#%00010000 ; horizontal motion from table (stella guide)
 	sta 	HMP0	   ; put in HMP0, strobe HMOVE after WSYNC to activate
+	jmp 	.waitForVBlank
+
+.noMoveLeft
+	lda 	#0
+	sta 	HMP0
+
 .endCheckJoyLeft
+	
+
 CheckJoyRight
 	lda		#%10000000
 	bit 	SWCHA
-	bne 	.endCheckJoyRight
+	bne 	.noMoveRight
+	
+	lda 	#<SamRightGfx
+	sta 	samrestinggfx
+	lda 	#>SamRightGfx
+	sta 	samrestinggfx+1
+	
+	lda 	#%11110000
 	sta 	REFP0
-	lda 	#%11100000
 	sta 	HMP0
+	jmp 	.endCheckJoyRight
+	
+.noMoveRight
+	lda 	#0
+	sta 	HMP0
+	
 .endCheckJoyRight
 	
 .waitForVBlank
@@ -218,27 +241,10 @@ DrawScreen
 	
 	ldx 	#SAM_RANGE ; this will be the playfi-1eld "range"
 ; DISCLAIMER: make the islands part of the PF, add sprites as the island disasters.
-.scanline
-;	lda 	isdrawingisland ; 1 if drawing island, 0 if not
-;	cmp 	#1				 ; I don't know if I have the right syntax here
-;	beq 	.drawIsland
-	
-.drawSpacer
-;	lda		#0 			; not storing into PF0 - always 0, never changed
-;	sta 	PF1
-;	sta 	PF2
+.drawPlayfield
 	lda		bgcolor
 	sta		COLUBK
 
-	
-;	inc 	spacercounter
-				
-;	dec 	samrange	
-;	dex
-;	sta		WSYNC
-;	jmp 	.startCheckSam8 ; NOTE: change to .startCheckSam later
-	
-.drawIsland
 	lda 	#IslandColors-1,x
 	sta 	COLUPF
 	lda 	#IslandSprite-1,x
@@ -252,89 +258,42 @@ DrawScreen
 	lda 	samcolor	; idk if we can just set colors once before starting
 						; the main loop and be done with it
 	sta 	COLUP0
-	
-;	lda 	samgfx
-;	sta 	GRP0
-;	lda 	samcolor
-;	sta 	COLUP0
-	
-;	inc 	islandcounter
-	
-;	echo [*-islandcounter]d ; not sure what this does, but it compiles
-				
-;	dec 	samrange
-;	dex
-;	sta		WSYNC
 
 ; NOTE: Change names to .(blahblah)Sam later
-;.startCheckSam8 ; total cycles: 
-;	; does sam start on this scan line?
-;	cpx 	samY
+.startCheckSam ; total cycles: 
+	; does sam start on this scan line?
+	cpx 	samY
 ;	lda 	samY
 ;	cmp 	samrange
-;	bne 	.loadSam8
-;	
-;	lda 	#SAM_HEIGHT
-;	sta 	drawsam
-;.loadSam8
-;	lda 	drawsam
-;	cmp 	#$FF ; comparing to FF because when you decrement 0 it goes to FF
-;	beq 	.noSam8 ; If Sam is done loading, go down to .noSam
-;	tay
-;	lda 	(samrestinggfx),y
-;	sta 	samgfx
-;	lda 	SamColors,y
-;	sta 	samcolor
-;
-;	dec 	drawsam
-;	jmp 	.endSam8
+	bne 	.loadSam
+	cpx 	#0
+	beq 	.noSam
 	
-;.noSam8
-;	lda 	#0
-;	sta 	samgfx
-	
-;.endSam8
-	
-;	dex
-;	lda 	samrange	 decrementing samrange
-;	dec					
-;	dec 	samrange	;
-	
-;.setIsDrawingIsland
-;	lda 	isdrawingisland
-;	cmp 	#0
-;	beq 	.checkSpacerCounter
-	
-;.checkIslandCounter
-;	lda 	islandcounter
-;	cmp 	#ISLAND_HEIGHT+1
-;	bne		.skipIsDrawingIslandSetting ; if the spacer limit hasn't been reached
-										; then don't start drawing islands yet
-;	lda 	#0
-;	sta 	isdrawingisland				; set draw island to true
-;	sta 	islandcounter
-	
-;.skipIsDrawingIslandSetting
-;
-;	jmp 	.endCheckCounters
+	lda 	#SAM_HEIGHT
+	sta 	drawsam
+.loadSam
+	lda 	drawsam
+	cmp 	#$FF ; comparing to FF because when you decrement 0 it goes to FF
+	beq 	.noSam ; If Sam is done loading, go down to .noSam
+	tay
+	lda 	(samrestinggfx),y
+	sta 	samgfx
+	lda 	SamColors,y
+	sta 	samcolor
 
-;.checkSpacerCounter
-;	lda 	spacercounter
-;	cmp 	#SPACER_HEIGHT+1
-;	bne 	.skipIsDrawingIslandSetting2
+	dec 	drawsam
+	jmp 	.endSam
 	
-;	lda 	#1
-;	sta 	isdrawingisland
-;	lda 	#0
-;	sta 	spacercounter
-;.skipIsDrawingIslandSetting2
-;.endCheckCounters
+.noSam
+	lda 	#0
+	sta 	samgfx
 	
+.endSam
 	dex
-	sta 	WSYNC
+;	sta 	WSYNC
 ;	sta		WSYNC
 ;	sta 	WSYNC
-	bne		.scanline
+	bne		.drawPlayfield
 	
 	; original is 42
 	
@@ -366,8 +325,6 @@ DrawScreen
     sta		TIM64T
 
 	;***** Overscan Code goes here
-	lda 	#0
-	sta 	GRP0
 
 .waitForOverscan
 	lda     INTIM

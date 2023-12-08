@@ -14,9 +14,11 @@
 BLACK = #$00
 BLUE = #$AC
 
+; Sam_range = 220 / 2 = 110
+
 ; height is the true height - 1.
 ; Sam actual height is 22 px
-SAM_HEIGHT = #21
+SAM_HEIGHT = #9 ; actual is 10
 ; actual island height is 25
 ISLAND_HEIGHT = #25
 SAM_INITIAL_Y = #30
@@ -24,7 +26,7 @@ ISLAND_ROWS = #3
 SPACER_HEIGHT = #9
 LAST_SPACER_HEIGHT = #2
 ; for now
-SAM_RANGE = #199 ; 200 is the true value rn
+SAM_RANGE = #109 ; 110 is the true value rn
 
 TOP_SPACER_HEIGHT = #10
 
@@ -158,7 +160,7 @@ CheckJoyUp
 	bit 	SWCHA
 	bne 	.endCheckJoyUp
 	lda 	samY
-	cmp 	#SAM_RANGE-1
+	cmp 	#SAM_RANGE-2
 	beq		.endCheckJoyUp
 	lda 	#<SamUpGfx
 	sta 	samrestinggfx
@@ -237,21 +239,20 @@ CheckJoyRight
 ; Kernel
 ;------------------------------------------------	
 DrawScreen
-
-	
-	ldx 	#SAM_RANGE ; this will be the playfi-1eld "range"
-; DISCLAIMER: make the islands part of the PF, add sprites as the island disasters.
-.drawPlayfield
 	lda		bgcolor
 	sta		COLUBK
+	; Initiating constants - bgcolor
+	sta 	WSYNC
+	
+	ldx 	#SAM_RANGE-1 ; this will be the playfiield "range"
+; DISCLAIMER: make the islands part of the PF, add sprites as the island disasters.
+.drawPlayfield
 
 	lda 	#IslandColors-1,x
 	sta 	COLUPF
 	lda 	#IslandSprite-1,x
 	sta 	PF1
 	sta 	PF2
-	lda 	#0
-	sta 	PF0
 	
 	lda 	samgfx	
 	sta 	GRP0
@@ -269,7 +270,7 @@ DrawScreen
 	cpx 	#0
 	beq 	.noSam
 	
-	lda 	#SAM_HEIGHT
+	ldy 	#SAM_HEIGHT
 	sta 	drawsam
 .loadSam
 	lda 	drawsam
@@ -292,7 +293,7 @@ DrawScreen
 	dex
 ;	sta 	WSYNC
 ;	sta		WSYNC
-;	sta 	WSYNC
+	sta 	WSYNC
 	bne		.drawPlayfield
 	
 	; original is 42
@@ -303,7 +304,6 @@ DrawScreen
 	lda 	#0
 	sta 	PF1
 	sta		PF2 ; if islands are "displaying," turn off
-	sta 	PF0
 	sta 	COLUPF
 	
 	lda 	#0
@@ -349,28 +349,13 @@ IslandSprite
 		.byte #%01111110
         .byte #%01111110
         .byte #%01111110
-        .byte #%01111110
         .byte #%01111110;
+        .byte #%01111110
 		.byte #%01111110
         .byte #%01111110
         .byte #%01111110
-        .byte #%01111110
         .byte #%01111110;
         .byte #%01111110
-        .byte #%01111110
-        .byte #%01111110
-        .byte #%01111110
-        .byte #%01111110;
-        .byte #%01111110
-        .byte #%01111110
-        .byte #%01111110
-        .byte #%01111110
-        .byte #%01111110;
-        .byte #%01111110
-        .byte #%01111110
-        .byte #%01111110
-        .byte #%01111110
-        .byte #%01111110;6 * 5 = 30
 		.byte #0
 		.byte #0
 		.byte #0
@@ -380,7 +365,8 @@ IslandSprite
 		.byte #0
 		.byte #0
 		.byte #0
-		.byte #0;5 * 2 = 10
+		.byte #0;
+		.byte #0;
 		.byte #%01111110
         .byte #%01111110
         .byte #%01111110
@@ -392,20 +378,6 @@ IslandSprite
         .byte #%01111110
         .byte #%01111110;
         .byte #%01111110
-        .byte #%01111110
-        .byte #%01111110
-        .byte #%01111110
-        .byte #%01111110;
-        .byte #%01111110
-        .byte #%01111110
-        .byte #%01111110
-        .byte #%01111110
-        .byte #%01111110;
-        .byte #%01111110
-        .byte #%01111110
-        .byte #%01111110
-        .byte #%01111110
-        .byte #%01111110;5 * 5 = 25
 		.byte #0
 		.byte #0
 		.byte #0
@@ -415,7 +387,8 @@ IslandSprite
 		.byte #0
 		.byte #0
 		.byte #0
-		.byte #0;5
+		.byte #0;
+		.byte #0
 		.byte #%01111110
         .byte #%01111110
         .byte #%01111110
@@ -427,20 +400,6 @@ IslandSprite
         .byte #%01111110
         .byte #%01111110;
         .byte #%01111110
-        .byte #%01111110
-        .byte #%01111110
-        .byte #%01111110
-        .byte #%01111110;
-        .byte #%01111110
-        .byte #%01111110
-        .byte #%01111110
-        .byte #%01111110
-        .byte #%01111110;
-        .byte #%01111110
-        .byte #%01111110
-        .byte #%01111110
-        .byte #%01111110
-        .byte #%01111110;4 * 5 = 20
 		.byte #0
 		.byte #0
 		.byte #0
@@ -450,7 +409,8 @@ IslandSprite
 		.byte #0
 		.byte #0
 		.byte #0
-		.byte #0;3
+		.byte #0;
+		.byte #0
 		.byte #%01111110
         .byte #%01111110
         .byte #%01111110
@@ -462,20 +422,6 @@ IslandSprite
         .byte #%01111110
         .byte #%01111110;
         .byte #%01111110
-        .byte #%01111110
-        .byte #%01111110
-        .byte #%01111110
-        .byte #%01111110;
-        .byte #%01111110
-        .byte #%01111110
-        .byte #%01111110
-        .byte #%01111110
-        .byte #%01111110;
-        .byte #%01111110
-        .byte #%01111110
-        .byte #%01111110
-        .byte #%01111110
-        .byte #%01111110;3
 		.byte #0
 		.byte #0
 		.byte #0
@@ -485,7 +431,8 @@ IslandSprite
 		.byte #0
 		.byte #0
 		.byte #0
-		.byte #0;2
+		.byte #0;
+		.byte #0
 		.byte #%01111110
         .byte #%01111110
         .byte #%01111110
@@ -497,20 +444,6 @@ IslandSprite
         .byte #%01111110
         .byte #%01111110;
         .byte #%01111110
-        .byte #%01111110
-        .byte #%01111110
-        .byte #%01111110
-        .byte #%01111110;
-        .byte #%01111110
-        .byte #%01111110
-        .byte #%01111110
-        .byte #%01111110
-        .byte #%01111110;
-        .byte #%01111110
-        .byte #%01111110
-        .byte #%01111110
-        .byte #%01111110
-        .byte #%01111110;2
 		.byte #0;
 		.byte #0
 		.byte #0
@@ -522,92 +455,18 @@ IslandSprite
 		.byte #0
 		.byte #0
 		.byte #0;
-		.byte #0
-		.byte #0
-		.byte #0
-		.byte #0
-		.byte #0;
-		.byte #0
-		.byte #0
-		.byte #0
-		.byte #0
-		.byte #0;
-		.byte #0
-		.byte #0
-		.byte #0
-		.byte #0
-		.byte #0;
-		.byte #0
-		.byte #0
-		.byte #0
-		.byte #0
-		.byte #0
-		.byte #0
-		.byte #0
-		.byte #0
-;---End Graphics Data---
 
 
 ;---Color Data from PlayerPal 2600---
 
 IslandColors
-        .byte #$FA;;
+		.byte #$FA
         .byte #$C8;
-        .byte #$C8;
-        .byte #$C8;
-        .byte #$C8;
-        .byte #$C8;;
-        .byte #$C8;
-        .byte #$C8;
-        .byte #$C8;
-        .byte #$C8;
-		.byte #$C8;;
-        .byte #$C8;
-        .byte #$C8;
-        .byte #$C8;
-        .byte #$C8;
-        .byte #$C8;;
-        .byte #$C8;
-        .byte #$C8;
-        .byte #$C8;
-		.byte #$C8;
-		.byte #$C8;;
         .byte #$C8;
         .byte #$C8;
         .byte #$C8;
 		.byte #$C8;
 		.byte #$C8;
-		.byte #0
-		.byte #0
-		.byte #0
-		.byte #0
-		.byte #0;
-		.byte #0
-		.byte #0
-		.byte #0
-		.byte #0
-		.byte #0;5
-        .byte #$FA;;
-        .byte #$C8;
-        .byte #$C8;
-        .byte #$C8;
-        .byte #$C8;
-        .byte #$C8;;
-        .byte #$C8;
-        .byte #$C8;
-        .byte #$C8;
-        .byte #$C8;
-		.byte #$C8;;
-        .byte #$C8;
-        .byte #$C8;
-        .byte #$C8;
-        .byte #$C8;
-        .byte #$C8;;
-        .byte #$C8;
-        .byte #$C8;
-        .byte #$C8;
-		.byte #$C8;
-		.byte #$C8;;
         .byte #$C8;
         .byte #$C8;
         .byte #$C8;
@@ -621,98 +480,15 @@ IslandColors
 		.byte #0
 		.byte #0
 		.byte #0
-		.byte #0;4
-        .byte #$FA;;
-        .byte #$C8;
-        .byte #$C8;
-        .byte #$C8;
-        .byte #$C8;
-        .byte #$C8;;
-        .byte #$C8;
-        .byte #$C8;
-        .byte #$C8;
-        .byte #$C8;
-		.byte #$C8;;
-        .byte #$C8;
-        .byte #$C8;
-        .byte #$C8;
-        .byte #$C8;
-        .byte #$C8;;
-        .byte #$C8;
-        .byte #$C8;
-        .byte #$C8;
-		.byte #$C8;
-		.byte #$C8;;
-        .byte #$C8;
-        .byte #$C8;
-        .byte #$C8;
-		.byte #$C8;
-		.byte #0
-		.byte #0
-		.byte #0
-		.byte #0
 		.byte #0;
-		.byte #0
-		.byte #0
-		.byte #0
-		.byte #0
-		.byte #0;3
-        .byte #$FA;;
-        .byte #$C8;
-        .byte #$C8;
-        .byte #$C8;
-        .byte #$C8;
-        .byte #$C8;;
-        .byte #$C8;
-        .byte #$C8;
-        .byte #$C8;
-        .byte #$C8;
-		.byte #$C8;;
-        .byte #$C8;
-        .byte #$C8;
-        .byte #$C8;
-        .byte #$C8;
-        .byte #$C8;;
-        .byte #$C8;
-        .byte #$C8;
-        .byte #$C8;
-		.byte #$C8;
-		.byte #$C8;;
-        .byte #$C8;
-        .byte #$C8;
-        .byte #$C8;
-		.byte #$C8;
-		.byte #0
-		.byte #0
-		.byte #0
-		.byte #0
 		.byte #0;
-		.byte #0
-		.byte #0
-		.byte #0
-		.byte #0
-		.byte #0;2
-        .byte #$FA;;
+		.byte #$FA
         .byte #$C8;
-        .byte #$C8;
-        .byte #$C8;
-        .byte #$C8;
-        .byte #$C8;;
-        .byte #$C8;
-        .byte #$C8;
-        .byte #$C8;
-        .byte #$C8;
-		.byte #$C8;;
-        .byte #$C8;
-        .byte #$C8;
-        .byte #$C8;
-        .byte #$C8;
-        .byte #$C8;;
         .byte #$C8;
         .byte #$C8;
         .byte #$C8;
 		.byte #$C8;
-		.byte #$C8;;
+		.byte #$C8;
         .byte #$C8;
         .byte #$C8;
         .byte #$C8;
@@ -728,9 +504,61 @@ IslandColors
 		.byte #0
 		.byte #0;
 		.byte #0
+		.byte #$FA
+        .byte #$C8;
+        .byte #$C8;
+        .byte #$C8;
+        .byte #$C8;
+		.byte #$C8;
+		.byte #$C8;
+        .byte #$C8;
+        .byte #$C8;
+        .byte #$C8;
+		.byte #$C8;
 		.byte #0
 		.byte #0
 		.byte #0
+		.byte #0
+		.byte #0;
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0;
+		.byte #0
+		.byte #$FA
+        .byte #$C8;
+        .byte #$C8;
+        .byte #$C8;
+        .byte #$C8;
+		.byte #$C8;
+		.byte #$C8;
+        .byte #$C8;
+        .byte #$C8;
+        .byte #$C8;
+		.byte #$C8;
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0;
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0
+		.byte #0;
+		.byte #0
+		.byte #$FA
+        .byte #$C8;
+        .byte #$C8;
+        .byte #$C8;
+        .byte #$C8;
+		.byte #$C8;
+		.byte #$C8;
+        .byte #$C8;
+        .byte #$C8;
+        .byte #$C8;
+		.byte #$C8;
 		.byte #0;
 		.byte #0
 		.byte #0
@@ -742,15 +570,6 @@ IslandColors
 		.byte #0
 		.byte #0
 		.byte #0;
-		.byte #0
-		.byte #0
-		.byte #0
-		.byte #0
-		.byte #0
-		.byte #0
-		.byte #0
-		.byte #0
-		.byte #0
 	
 
 ;---End Color Data---
@@ -758,75 +577,38 @@ IslandColors
 ;---Graphics Data from PlayerPal 2600---
 TophatSamRestingGfx
 SamRightGfx
-        .byte #%00111010;$80
-        .byte #%00110100;$80
-        .byte #%00110100;$80
-        .byte #%00110100;$80
-        .byte #%00111100;$80
-        .byte #%00111100;$80
-        .byte #%10111101;$80
-        .byte #%10111101;$40
-        .byte #%10111101;$40
-        .byte #%01111110;$40
-        .byte #%01111110;$40
-        .byte #%01111110;$40
+        .byte #%00011000;$80
+        .byte #%00011000;$80
+        .byte #%01011000;$40
+        .byte #%01011000;$40
         .byte #%00111100;$40
-        .byte #%00100100;$40
-        .byte #%00011000;$F8
-        .byte #%00110100;$F8
-        .byte #%00111100;$F8
-        .byte #%00101000;$F8
-        .byte #%00011100;$F8
-        .byte #%01111110;$00
+        .byte #%00011010;$F6
+        .byte #%00011010;$F6
         .byte #%00111100;$00
-        .byte #%00111100;$00
+        .byte #%00011000;$00
+        .byte #%00011000;$00
 SamUpGfx
-        .byte #%00110100;$80
-        .byte #%00110100;$80
-        .byte #%00110100;$80
-        .byte #%00110100;$80
-        .byte #%00111100;$80
-        .byte #%00111100;$80
-        .byte #%10111101;$80
-        .byte #%10111101;$40
-        .byte #%10111101;$40
-        .byte #%01111110;$40
-        .byte #%01111110;$40
-        .byte #%01111110;$40
+        .byte #%00011000;$80
+        .byte #%00011000;$80
         .byte #%00111100;$40
-        .byte #%00100100;$40
-        .byte #%00011000;$F8
-        .byte #%00111100;$F8
-        .byte #%00111100;$F8
-        .byte #%00111100;$F8
-        .byte #%00011100;$F8
-        .byte #%01111110;$00
+        .byte #%00111100;$40
+        .byte #%00111100;$40
+        .byte #%00011000;$F6
+        .byte #%00011000;$F6
         .byte #%00111100;$00
-        .byte #%00111100;$00
+        .byte #%00011000;$00
+        .byte #%00011000;$00
 SamDownGfx
-        .byte #%00110100;$80
-        .byte #%00110100;$80
-        .byte #%00110100;$80
-        .byte #%00110100;$80
-        .byte #%00111100;$80
-        .byte #%00111100;$80
-        .byte #%10111101;$80
-        .byte #%10111101;$40
-        .byte #%10111101;$40
-        .byte #%01111110;$40
-        .byte #%01111110;$40
-        .byte #%01111110;$40
+        .byte #%00011000;$80
+        .byte #%00011000;$80
+        .byte #%01011010;$40
+        .byte #%01011010;$40
         .byte #%00111100;$40
-        .byte #%00100100;$40
-        .byte #%00011000;$F8
-        .byte #%00110100;$F8
-        .byte #%00111100;$F8
-        .byte #%00101000;$F8
-        .byte #%00011100;$F8
-        .byte #%01111110;$00
+        .byte #%00011000;$F6
+        .byte #%00011000;$F6
         .byte #%00111100;$00
-        .byte #%00111100;$00
-;---End Graphics Data---
+        .byte #%00011000;$00
+        .byte #%00011000;$00
 
 SamFrames
 	.byte <SamRightGfx
@@ -838,171 +620,95 @@ SamFrames
 SamColors
         .byte #$80;
         .byte #$80;
-        .byte #$80;
-        .byte #$80;
-        .byte #$80;
-        .byte #$80;
-        .byte #$80;
         .byte #$40;
         .byte #$40;
         .byte #$40;
-        .byte #$40;
-        .byte #$40;
-        .byte #$40;
-        .byte #$40;
-        .byte #$F8;
-        .byte #$F8;
-        .byte #$F8;
-        .byte #$F8;
-        .byte #$F8;
+        .byte #$F6;
+        .byte #$F6;
         .byte #$00;
         .byte #$00;
         .byte #$00;
 
 FoodSprites
 CoconutSprite
-        .byte #%00000000;$F0
         .byte #%00011000;$F0
         .byte #%00111100;$F0
         .byte #%01111110;$F0
         .byte #%01101010;$F0
         .byte #%00110100;$F0
         .byte #%00011000;$F0
-        .byte #%00000000;--
 BananaSprite
-        .byte #%00000000;$1A
         .byte #%00011000;$1A
         .byte #%00110000;$1A
         .byte #%00110000;$1A
         .byte #%00110000;$1A
         .byte #%00011000;$1A
         .byte #%00000100;$F0
-        .byte #%00000000;--
 MangoSprite
-        .byte #%00000000;$40
         .byte #%00111000;$40
         .byte #%00011100;$40
         .byte #%00111100;$40
         .byte #%00111100;$40
         .byte #%00011000;$D2
         .byte #%00000110;$D0
-        .byte #%00000000;$D0
 PersimmmonSprite
-        .byte #%00000000;$34
         .byte #%00011100;$34
         .byte #%00111110;$34 
         .byte #%00111110;$34
         .byte #%00111110;$34
         .byte #%00101010;$D0
         .byte #%00011100;$D0
-        .byte #%00000000;$D0
 ;---End Graphics Data---
 
 DisasterSprites
 VolcanoSprite
-        .byte #%00100010;$40
-        .byte #%01100110;$40
-        .byte #%01111110;$40
-        .byte #%11101110;$40
-        .byte #%01100010;$40
-        .byte #%11011111;$40
-        .byte #%11010100;$40
-        .byte #%10101011;$F0
-        .byte #%11111110;$F0
-        .byte #%01111110;$F0
-        .byte #%01111110;$F0
-        .byte #%00111100;$F0
-        .byte #%00111100;$F0
-        .byte #%00011100;$F0
-        .byte #%10011001;$40
-        .byte #%00111010;$40
+        .byte #%00000000;$40
         .byte #%11101111;$40
-        .byte #%01001010;$40
-        .byte #%00010000;$0E
-        .byte #%00111101;$0E
-        .byte #%00101100;$0E
-        .byte #%01101100;$0E
-        .byte #%01000000;$0E
-        .byte #%10001010;$40
-        .byte #%00100000;$40
+        .byte #%00011110;$40
+        .byte #%01111100;$40
+        .byte #%11111111;$F2
+        .byte #%01111111;$F2
+        .byte #%00111100;$F2
+        .byte #%00111000;$F2
+        .byte #%01101100;$40
+        .byte #%10100110;$40
+        .byte #%10010011;$40
 TornadoSprite
-        .byte #%00110000;$FA
-        .byte #%00111110;$FA
-        .byte #%11111011;$FA
-        .byte #%01101110;$FA
-        .byte #%01111100;$FA
-        .byte #%00010000;$0E
-        .byte #%00001000;$0A
-        .byte #%00001100;$0E
-        .byte #%00001000;$0E
-        .byte #%00000100;$0A
-        .byte #%00001110;$0E
-        .byte #%00001100;$0E
-        .byte #%00001010;$0A
-        .byte #%00111110;$0E
-        .byte #%00111100;$0E
-        .byte #%00101000;$0A
-        .byte #%01111110;$0E
-        .byte #%01111100;$0E
-        .byte #%11111000;$04
-        .byte #%01010110;$04
-        .byte #%11101111;$04
-        .byte #%10111011;$04
-        .byte #%01010101;$04
-        .byte #%11111110;$04
-        .byte #%00111000;$04
+        .byte #%01001000;$0C
+        .byte #%00011010;$0A
+        .byte #%01111000;$0C
+        .byte #%01010000;$0A
+        .byte #%00111001;$0C
+        .byte #%00010100;$0A
+        .byte #%10011100;$0C
+        .byte #%00101010;$0A
+        .byte #%01111100;$0C
+        .byte #%11111111;$04
+        .byte #%01110110;$04
 LightningSprite
-        .byte #%00000000;$F4
-        .byte #%01111100;$F4
-        .byte #%01111100;$F4
-        .byte #%00100000;$1E
-        .byte #%00110000;$1E
-        .byte #%10010010;$A6
-        .byte #%00011100;$1E
-        .byte #%00000110;$1E
-        .byte #%00001100;$1E
-        .byte #%00110000;$1E
-        .byte #%00010000;$1E
-        .byte #%01010010;$A6
-        .byte #%00001100;$1E
-        .byte #%00000100;$1E
-        .byte #%01000101;$A6
-        .byte #%00011100;$1E
-        .byte #%00110000;$1E
-        .byte #%00100000;$1E
-        .byte #%10000101;$A6
-        .byte #%01111111;$06
-        .byte #%01111111;$06
-        .byte #%11111110;$06
-        .byte #%11111110;$06
-        .byte #%01111110;$06
-        .byte #%00111100;$06
+        .byte #%00000000;$FA
+        .byte #%01100101;$98
+        .byte #%00110001;$1C
+        .byte #%01000001;$1C
+        .byte #%01010011;$98
+        .byte #%00100100;$1C
+        .byte #%10101010;$98
+        .byte #%01000001;$1C
+        .byte #%00110110;$1C
+        .byte #%11111111;$04
+        .byte #%01101110;$04
 AlienSprite
-        .byte #%00000000;$9C
-        .byte #%11111111;$9C
+        .byte #%00000000;$8E
+        .byte #%11111111;$8E
         .byte #%11111111;$8A
-        .byte #%11111111;$88
-        .byte #%11111111;$86
-        .byte #%01111110;$80
-        .byte #%01111110;$9C
-        .byte #%01111110;$8A
-        .byte #%01111110;$88
         .byte #%01111110;$86
-        .byte #%01111110;$80
-        .byte #%00111100;$9C
-        .byte #%00111100;$8A
-        .byte #%00111100;$88
-        .byte #%00111100;$86
+        .byte #%00111100;$84
         .byte #%00011000;$80
-        .byte #%01011010;$04
-        .byte #%11100111;$04
         .byte #%10111101;$04
-        .byte #%01111110;$04
-        .byte #%00111100;$C8
-        .byte #%01100110;$C8
-        .byte #%01111110;$C8
-        .byte #%01101010;$C8
-        .byte #%10111101;$C8
+        .byte #%11111111;$04
+        .byte #%00111100;$D4
+        .byte #%00011000;$D4
+        .byte #%00100100;$D4
 
 ;---Color Data from PlayerPal 2600---
 FoodColors
@@ -1049,105 +755,49 @@ VolcanoColors
         .byte #$40;
         .byte #$40;
         .byte #$40;
+        .byte #$F2;
+        .byte #$F2;
+        .byte #$F2;
+        .byte #$F2;
         .byte #$40;
-        .byte #$40;
-        .byte #$40;
-        .byte #$F0;
-        .byte #$F0;
-        .byte #$F0;
-        .byte #$F0;
-        .byte #$F0;
-        .byte #$F0;
-        .byte #$F0;
-        .byte #$40;
-        .byte #$40;
-        .byte #$40;
-        .byte #$40;
-        .byte #$0E;
-        .byte #$0E;
-        .byte #$0E;
-        .byte #$0E;
-        .byte #$0E;
         .byte #$40;
         .byte #$40;
 TornadoColors
-        .byte #$FA;
-        .byte #$FA;
-        .byte #$FA;
-        .byte #$FA;
-        .byte #$FA;
-        .byte #$0E;
+        .byte #$0C;
         .byte #$0A;
-        .byte #$0E;
-        .byte #$0E;
+        .byte #$0C;
         .byte #$0A;
-        .byte #$0E;
-        .byte #$0E;
+        .byte #$0C;
         .byte #$0A;
-        .byte #$0E;
-        .byte #$0E;
+        .byte #$0C;
         .byte #$0A;
-        .byte #$0E;
-        .byte #$0E;
-        .byte #$04;
-        .byte #$04;
-        .byte #$04;
-        .byte #$04;
-        .byte #$04;
+        .byte #$0C;
         .byte #$04;
         .byte #$04;
 LightningColors
-        .byte #$F4;
-        .byte #$F4;
-        .byte #$F4;
-        .byte #$1E;
-        .byte #$1E;
-        .byte #$A6;
-        .byte #$1E;
-        .byte #$1E;
-        .byte #$1E;
-        .byte #$1E;
-        .byte #$1E;
-        .byte #$A6;
-        .byte #$1E;
-        .byte #$1E;
-        .byte #$A6;
-        .byte #$1E;
-        .byte #$1E;
-        .byte #$1E;
-        .byte #$A6;
-        .byte #$06;
-        .byte #$06;
-        .byte #$06;
-        .byte #$06;
-        .byte #$06;
-        .byte #$06;
+        .byte #$FA;
+        .byte #$98;
+        .byte #$1C;
+        .byte #$1C;
+        .byte #$98;
+        .byte #$1C;
+        .byte #$98;
+        .byte #$1C;
+        .byte #$1C;
+        .byte #$04;
+        .byte #$04;
 AlienColors
-        .byte #$9C;
-        .byte #$9C;
+        .byte #$8E;
+        .byte #$8E;
         .byte #$8A;
-        .byte #$88;
         .byte #$86;
-        .byte #$80;
-        .byte #$9C;
-        .byte #$8A;
-        .byte #$88;
-        .byte #$86;
-        .byte #$80;
-        .byte #$9C;
-        .byte #$8A;
-        .byte #$88;
-        .byte #$86;
+        .byte #$84;
         .byte #$80;
         .byte #$04;
         .byte #$04;
-        .byte #$04;
-        .byte #$04;
-        .byte #$C8;
-        .byte #$C8;
-        .byte #$C8;
-        .byte #$C8;
-        .byte #$C8;
+        .byte #$D4;
+        .byte #$D4;
+        .byte #$D4;
 
 ;---End Color Data---
 

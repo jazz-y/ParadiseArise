@@ -25,22 +25,19 @@ SAM_INITIAL_Y = #30
 ISLAND_ROWS = #3
 SPACER_HEIGHT = #9
 LAST_SPACER_HEIGHT = #2
+
 ; for now
 SAM_RANGE = #109 ; 110 is the true value rn
 
+DISASTER_HEIGHT = #10 ; actual is 11
+
+BALL_HEIGHT = #5 ; actual is 6
+
 TOP_SPACER_HEIGHT = #10
 
-ISLAND1_HEIGHT = #20 ; where island1 starts
-ISLAND1_SPACER_HEIGHT = #10 ; where island1 spacer starts
+BALL_INITIAL_Y = #30
 
-ISLAND2_HEIGHT = #20 ; where island2 starts
-ISLAND2_SPACER_HEIGHT = #10 ; where island1 spacer starts
-
-ISLAND3_HEIGHT = #20 ; where island3 starts
-ISLAND3_SPACER_HEIGHT = #10 ; where island1 spacer starts
-
-ISLAND4_HEIGHT = #20 ; where island4 starts
-ISLAND4_SPACER_HEIGHT = #10 ; where island1 spacer starts
+DISASTER_INITIAL_Y = #34
 
 ;------------------------------------------------
 ; RAM
@@ -55,6 +52,7 @@ samrestinggfx	ds 2
 samgfx			.byte
 
 samcolor		.byte
+samcolorsgfx 	ds 2
 samY 			.byte
 samrange 		.byte
 samtemp			.byte
@@ -62,18 +60,49 @@ samtemp			.byte
 drawsam			.byte
 
 ; island graphics stuff
-drawisland		.byte
-islandrows		.byte
-islandheight	.byte
+drawdisaster	.byte
+disasterY		.byte
+
 islandsprite	.byte
+islandcolorsgfx ds 2
 
 ; spacer graphics stuff
 spacerheight	.byte
 spacercounter 	.byte
 islandcounter	.byte
+ballsettings 	.byte
+
+framecounter	.byte
+secondscounter	.byte
+mincounter		.byte
+
+disastersprite		ds 2
+disastergfx			.byte
+disastercolors		ds 2
+disastercolorsgfx	.byte
+
+foodsprite			ds 2
+foodgfx				.byte
+foodcolorgfx		.byte
+
+; title screen
+
+PF0Top 			ds 2
+PF1Top			ds 2
+PF2Top 			ds 2
+
+PF0Bottom 		ds 2
+PF1Bottom 		ds 2
+PF2Bottom 		ds 2
 
 ; general 
 counter 		.byte
+hasbeenreset	.byte	; for checking if the screen was reset the first time
+drawball		.byte 
+ballY			.byte
+gameover 		.byte
+addtohungerbar 	.byte
+maincounter 	.byte
 
 ; condition stuff
 isdrawingisland	.byte
@@ -102,12 +131,44 @@ Start
 ;	dex
 ;	bne 	.initRAM
 
-	; Loading resting 
+; Loading Sam gfx
 	lda 	#<SamRightGfx
 	sta 	samrestinggfx
 	lda 	#>SamRightGfx
 	sta 	samrestinggfx+1
 	
+	lda 	#<SamColors
+	sta 	samcolorsgfx
+	lda 	#>SamColors
+	sta 	samcolorsgfx+1
+	
+	
+; loading ball gfx
+
+	lda 	#<CoconutSprite
+	sta 	foodgfx
+	lda 	#>CoconutSprite
+	sta 	foodgfx+1
+;	lda 	#<CoconutColor,x
+;	sta 	foodcolorgfx
+	
+; Loading disaster gfx
+	lda 	#<VolcanoSprite
+	sta 	disastersprite
+	lda 	#>VolcanoSprite
+	sta 	disastersprite+1
+	
+	lda 	#<VolcanoColors
+	sta 	disastercolors
+	lda 	#>VolcanoColors
+	sta 	disastercolors+1
+
+	
+	lda 	#DISASTER_HEIGHT
+	sta 	drawdisaster
+	lda 	#DISASTER_INITIAL_Y
+	sta 	disasterY
+
 	lda 	#SAM_INITIAL_Y
 	sta 	samY
 	
@@ -117,8 +178,8 @@ Start
 	lda 	#SPACER_HEIGHT
 	sta 	spacerheight
 	
-	lda 	#ISLAND_HEIGHT
-	sta 	islandheight
+	lda 	#BALL_INITIAL_Y
+	sta 	ballY
 	
 	lda 	#0
 	sta 	isdrawingisland ; so the spacer is drawn first 
@@ -144,7 +205,12 @@ MainLoop
 	;***** Vertical Blank code goes here
 	lda		#BLUE
 	sta		bgcolor
-	lda 	#%00000001
+	
+	lda 	#0 
+	sta 	ballsettings
+	sta 	ENABL
+	
+	lda 	#%00110001 ;reflecting playfield, 2 clock ball
 	sta 	CTRLPF
 
 .checkReset
@@ -227,6 +293,58 @@ CheckJoyRight
 	sta 	HMP0
 	
 .endCheckJoyRight
+
+.checkSpaceBar		; left joystick fire
+	lda 	#%10000000
+	bit 	INPT4
+	bne 	.skipSpacebarSound
+	lda 	#%10001000
+	sta 	AUDF1
+	lda 	#%00000101
+	sta 	AUDC1
+	lda 	#%00000101
+	sta 	AUDV1
+	jmp		.endCheckSpacebar
+
+.skipSpacebarSound
+	lda 	#0
+	sta 	AUDV1	; set sound off
+.endCheckSpacebar
+
+; ========================================
+; CHECK FOR COLLISIONS 
+; ========================================
+
+;;;;;;;;;;;;;;;;; For now: ;;;;;;;;;;;;;;;;;;;;;;;;;
+; if collisions are set, then a 1 wil be stored into something
+
+.checkCollisions
+.checkDisasterCollisions
+	lda 	CXPPMM
+	and 	#%01000000
+	beq 	.noDisasterCollision	; branch if equal to 0
+	lda 	#1
+	sta 	gameover
+
+.noDisasterCollision
+
+.checkTouchingFood
+	lda		CXP0FB
+	and 	#%10000000
+	beq 	.noFoodCollision
+	lda 	#1
+	sta 	addtohungerbar
+	
+.noFoodCollision
+
+;.checkTouchingWater				; more accurate to say that it's checking to see if feet are
+;	ldy 	#SAM_HEIGHT
+;	lda 	(samgfx),y			; touching the playfield
+;	and 	#%
+
+.noTouchingWater
+
+
 	
 .waitForVBlank
 	lda		INTIM
@@ -241,61 +359,145 @@ CheckJoyRight
 DrawScreen
 	lda		bgcolor
 	sta		COLUBK
+	
+	lda 	#0
+	sta 	ENABL
+	
+	lda 	#%00000110
+	sta 	NUSIZ1
 	; Initiating constants - bgcolor
+	ldx 	#SAM_RANGE-1 ; this will be the playfiield "range"
+	sta 	WSYNC
+
+	sleep	27
+	sta		RESP1
+		
 	sta 	WSYNC
 	
-	ldx 	#SAM_RANGE-1 ; this will be the playfiield "range"
 ; DISCLAIMER: make the islands part of the PF, add sprites as the island disasters.
 .drawPlayfield
 
-	lda 	#IslandColors-1,x
-	sta 	COLUPF
-	lda 	#IslandSprite-1,x
-	sta 	PF1
-	sta 	PF2
-	
-	lda 	samgfx	
-	sta 	GRP0
-	lda 	samcolor	; idk if we can just set colors once before starting
-						; the main loop and be done with it
-	sta 	COLUP0
+;	drawing all previously calculated player stuff
 
-; NOTE: Change names to .(blahblah)Sam later
+	lda 	#IslandColors-1,x	; 4
+	sta 	COLUPF				; 3 -> 7
+	lda 	#IslandSprite-1,x	; 3 -> 10
+	sta 	PF1					; 3 -> 13
+	sta 	PF2					; 3 -> 16
+	
+	lda 	samgfx				; 3 -> 19
+	sta 	GRP0				; 3	-> 22	
+	lda 	samcolor			; 3 -> 25
+						; idk if we can just set colors once before starting
+						; the main loop and be done with it
+	sta 	COLUP0				; 3 -> 28
+	
+	lda 	disastergfx
+	sta		GRP1
+	lda 	disastercolorsgfx
+	sta 	COLUP1
+	
+	lda 	ballsettings
+	sta 	ENABL
+
 .startCheckSam ; total cycles: 
 	; does sam start on this scan line?
-	cpx 	samY
-;	lda 	samY
-;	cmp 	samrange
-	bne 	.loadSam
-	cpx 	#0
-	beq 	.noSam
-	
-	ldy 	#SAM_HEIGHT
+	cpx 	samY				; 3 -> 31
+	bne 	.loadSam			; 2 if not branching, 3 if branching
+
+	lda 	#SAM_HEIGHT		; 3
 	sta 	drawsam
 .loadSam
 	lda 	drawsam
-	cmp 	#$FF ; comparing to FF because when you decrement 0 it goes to FF
-	beq 	.noSam ; If Sam is done loading, go down to .noSam
+; comparing to FF because when you decrement 0 it goes to FF
+	cmp 	#$FF 
+; when you 
+	
+; If Sam is done loading, go down to .noSam
+	beq 	.noSam
 	tay
 	lda 	(samrestinggfx),y
 	sta 	samgfx
-	lda 	SamColors,y
+	lda		SamColors,y
+;	lda 	(samcolorsgfx),y
 	sta 	samcolor
 
-	dec 	drawsam
+	dec		drawsam
 	jmp 	.endSam
 	
 .noSam
 	lda 	#0
 	sta 	samgfx
+;	sta 	WSYNC 	; maybe this will fix syncing issues
 	
 .endSam
-	dex
-;	sta 	WSYNC
-;	sta		WSYNC
-	sta 	WSYNC
-	bne		.drawPlayfield
+
+.startCheckDisaster
+	cpx 	disasterY
+	bne 	.loadDisaster
 	
+	lda 	#DISASTER_HEIGHT
+	sta 	drawdisaster
+
+.loadDisaster
+	lda 	drawdisaster
+	cmp 	#$FF
+	beq 	.noDisaster
+	
+	tay 	
+	lda 	(disastersprite),y
+	sta 	disastergfx
+	lda 	(disastercolors),y
+	sta 	disastercolorsgfx
+	
+	dec 	drawdisaster
+	jmp 	.endDisaster
+	
+.noDisaster
+	lda 	#0
+	sta 	disastergfx
+;	sta 	WSYNC
+	
+.endDisaster
+	
+.startCheckBall
+	cpx 	ballY
+	bne 	.loadBall
+	
+	lda 	#BALL_HEIGHT
+	sta 	drawball
+.loadBall
+	lda		drawball
+	cmp 	#$FF
+	beq 	.noBall
+
+	lda 	#%00000010
+	sta 	ballsettings
+	
+	dec 	drawball
+	jmp 	.endBall
+	
+.noBall
+	lda 	#%00000000
+	sta 	ballsettings
+;	sta 	WSYNC
+	
+.endBall
+	
+	
+.endOfPlayfield
+	dex
+;	stx 	maincounter
+
+;	sta 	WSYNC
+;	lda 	maincounter 
+;	cmp 	#0
+;	bne 	.endmainstuff
+	beq		.endmainstuff
+	jmp		.drawPlayfield
+;	bne		.drawPlayfield 	; causing branch out of range error when including positioning stuff
+;	jmp 	.drawPlayfield
+.endmainstuff
 	; original is 42
 	
 	ldx 	#LAST_SPACER_HEIGHT
@@ -305,6 +507,7 @@ DrawScreen
 	sta 	PF1
 	sta		PF2 ; if islands are "displaying," turn off
 	sta 	COLUPF
+	sta 	ENABL
 	
 	lda 	#0
 	sta 	GRP0	; turn player graphics off
@@ -314,6 +517,7 @@ DrawScreen
 	dex
 	sta 	WSYNC
 	bne 	.finalspacer
+	inc 	framecounter
 
 ;------------------------------------------------
 ; Overscan
@@ -325,6 +529,28 @@ DrawScreen
     sta		TIM64T
 
 	;***** Overscan Code goes here
+; ===============================================
+; TIMER SETUP
+; ===============================================	
+
+.checkFrameCounter
+	lda 	framecounter
+	cmp 	#60 
+	beq		.noAddSec
+	inc 	secondscounter
+	lda 	#0
+	sta 	framecounter
+	
+.noAddSec
+
+	lda 	secondscounter
+	cmp 	#60
+	bne 	.noAddMin
+	inc 	mincounter
+	lda 	#0
+	sta 	secondscounter
+		
+.noAddMin
 
 .waitForOverscan
 	lda     INTIM
@@ -571,6 +797,7 @@ IslandColors
 		.byte #0
 		.byte #0;
 	
+	align 256
 
 ;---End Color Data---
 
@@ -711,6 +938,7 @@ AlienSprite
         .byte #%00100100;$D4
 
 ;---Color Data from PlayerPal 2600---
+; unused
 FoodColors
 CoconutColor
         .byte #$F0;
@@ -748,6 +976,7 @@ PersimmonColors
         .byte #$D0;
         .byte #$D0;
         .byte #$D0;
+;
 		
 DisasterColors
 VolcanoColors
@@ -800,6 +1029,335 @@ AlienColors
         .byte #$D4;
 
 ;---End Color Data---
+
+PF0FirstPart
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %01000000
+	.byte %01000000
+	.byte %01000000
+	.byte %01000000
+	.byte %01000000
+	.byte %11000000
+	.byte %01000000
+	.byte %01000000
+	.byte %01000000
+	.byte %01000000
+	.byte %11000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+
+PF1FirstPart
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000100
+	.byte %00000110
+	.byte %00000011
+	.byte %00000010
+	.byte %00000010
+	.byte %00000010
+	.byte %00000011
+	.byte %00000001
+	.byte %00000001
+	.byte %00000001
+	.byte %00000001
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %01000101
+	.byte %01101101
+	.byte %00111001
+	.byte %00101001
+	.byte %00101001
+	.byte %10101001
+	.byte %10111001
+	.byte %10010001
+	.byte %10010001
+	.byte %10010001
+	.byte %10010001
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+
+PF2FirstPart
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %10101010
+	.byte %00101011
+	.byte %00101001
+	.byte %00101001
+	.byte %00111001
+	.byte %00011001
+	.byte %00101001
+	.byte %00101000
+	.byte %00101000
+	.byte %00101000
+	.byte %10011000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %10001010
+	.byte %11011010
+	.byte %01110010
+	.byte %01010010
+	.byte %01010011
+	.byte %01010001
+	.byte %01110010
+	.byte %00100010
+	.byte %00100010
+	.byte %00100010
+	.byte %00100001
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+
+PF0SecondPart
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00110000
+	.byte %10010000
+	.byte %10010000
+	.byte %10010000
+	.byte %00010000
+	.byte %00010000
+	.byte %00010000
+	.byte %10010000
+	.byte %10010000
+	.byte %00010000
+	.byte %00110000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %01100000
+	.byte %11100000
+	.byte %10100000
+	.byte %00100000
+	.byte %00100000
+	.byte %00100000
+	.byte %00100000
+	.byte %00100000
+	.byte %10100000
+	.byte %11100000
+	.byte %01100000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	
+PF1SecondPart
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %11001110
+	.byte %11101110
+	.byte %00101000
+	.byte %00101000
+	.byte %00101000
+	.byte %00101110
+	.byte %11001000
+	.byte %00001000
+	.byte %00001000
+	.byte %10001000
+	.byte %11101110
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00111001
+	.byte %00010011
+	.byte %10010010
+	.byte %10010010
+	.byte %10010000
+	.byte %10010000
+	.byte %10010001
+	.byte %10010010
+	.byte %10010010
+	.byte %00010001
+	.byte %00111001
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+
+PF2SecondPart
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00111001
+	.byte %00111011
+	.byte %00001010
+	.byte %00001010
+	.byte %00001010
+	.byte %00111010
+	.byte %00001001
+	.byte %00001000
+	.byte %00001000
+	.byte %00001000
+	.byte %00111011
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	.byte %00000000
+	
+TitleColors
+   .byte $0E
+   .byte $0E
+   .byte $0E
+   .byte $0E
+   .byte $0E
+   .byte $0E
+   .byte $0E
+   .byte $0E
+   .byte $0E
+   .byte $0E
+   .byte $0E
+   .byte $0E
+   .byte $0E
+   .byte $0E
+   .byte $0E
+   .byte $0E
+   .byte $0E
+   .byte $0E
+   .byte $0E
+   .byte $0E
+   .byte $0E
+   .byte $0E
+   .byte $0E
+   .byte $0E
+   .byte $0E
+   .byte $0E
+   .byte $0E
+   .byte $0E
+   .byte $0E
+   .byte $0E
+   .byte $0E
+   .byte $0E
+   .byte $0E
+   .byte $0E
+   .byte $0E
+   .byte $0E
+   .byte $0E
+   .byte $0E
+   .byte $0E
+   .byte $0E
+   .byte $0E
+   .byte $0E
+   .byte $0E
+   .byte $0E
+   .byte $0E
 
 ;------------------------------------------------
 ; Interrupt Vectors

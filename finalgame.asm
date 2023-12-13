@@ -32,22 +32,22 @@ SAM_RANGE = #109 ; 110 is the true value rn
 
 DISASTER_HEIGHT = #10 ; actual is 11
 
-BALL_HEIGHT = #5 ; actual is 6
+MISSILE_HEIGHT = #3 ; actual is 6
 
 TOP_SPACER_HEIGHT = #10
 
-BALL_INITIAL_Y = #100
+MISSILE_INITIAL_Y = #9
 
-DISASTER_INITIAL_Y = #34
+DISASTER_INITIAL_Y = #100
 
 ; For DISASTER_XPOS_INIT:
 ; 7 works best for volcanos right aligned
 ; 5 for left align
 
-DISASTER_XPOS_INIT = #5 ; 
+DISASTER_XPOS_INIT = #4 ; 
 
 ; For FOOD_XPOS_INIT:
-; 2 works best (not very well) for ball first island
+; 2 works best (not very well) for missile first island
 
 FOOD_XPOS_INIT = #8
 
@@ -82,7 +82,7 @@ islandcolorsgfx ds 2
 spacerheight	.byte
 spacercounter 	.byte
 islandcounter	.byte
-ballsettings 	.byte
+missilesettings 	.byte
 
 framecounter	.byte
 secondscounter	.byte
@@ -110,8 +110,8 @@ PF2Bottom 		ds 2
 ; general 
 counter 		.byte
 hasbeenreset	.byte	; for checking if the screen was reset the first time
-drawball		.byte 
-ballY			.byte
+drawmissile		.byte 
+missileY		.byte
 gameover 		.byte
 addtohungerbar 	.byte
 maincounter 	.byte
@@ -159,7 +159,7 @@ Start
 	sta 	samcolorsgfx+1
 	
 	
-; loading ball gfx
+; loading missile gfx
 
 	lda 	#<CoconutSprite
 	sta 	foodgfx
@@ -194,8 +194,8 @@ Start
 	lda 	#SPACER_HEIGHT
 	sta 	spacerheight
 	
-	lda 	#BALL_INITIAL_Y
-	sta 	ballY
+	lda 	#MISSILE_INITIAL_Y
+	sta 	missileY
 	
 	lda 	#FOOD_XPOS_INIT
 	sta 	foodxpos
@@ -226,10 +226,10 @@ MainLoop
 	sta		bgcolor
 	
 	lda 	#0 
-	sta 	ballsettings
-	sta 	ENABL
+	sta 	missilesettings
+	sta 	ENAM0
 	
-	lda 	#%00110001 ;reflecting playfield, 2 clock ball
+	lda 	#%00000001 ;reflecting playfield ONLY DONT TOUCH
 	sta 	CTRLPF
 
 .checkReset
@@ -349,24 +349,24 @@ CheckJoyRight
 .noDisasterCollision
 
 .checkTouchingFood
+	lda 	#00 ; for debugging
 	lda 	#00
 	lda 	#00
-	lda 	#00
-	lda		CXP0FB
-	and 	#%01000000 	; checking to see if P0 and ball are colliding, only care where bit is 1
+	lda		CXM0P
+	and 	#%01000000 	; checking to see if P0 and missile are colliding, only care where bit is 1
 						; in mask (what bit is 1)
 	beq 	.noFoodCollision
 	lda 	#1
 	sta 	addtohungerbar
 ;	inc 	hungerHealth 	; kinda like health?
 	lda 	#$FF
-	sta 	drawball		; always branches to no sprite when FF
-	sta		ballY			; FF will never be reached in scanline counter
+	sta 	drawmissile		; always branches to no sprite when FF
+	sta		missileY			; FF will never be reached in scanline counter
 	jmp 	.endFoodCollisionCheck
 	
 .noFoodCollision
-;	lda 	#BALL_INITIAL_Y
-;	sta 	ballY
+;	lda 	#MISSILE_INITIAL_Y
+;	sta 	missileY
 
 .endFoodCollisionCheck
 	
@@ -413,9 +413,9 @@ DrawScreen	; setting x positions
 .burnFirstScanLine ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	lda		bgcolor	;3
 	sta		COLUBK	;3
-	lda 	#%00000110	;2
-	sta 	NUSIZ1		; 3 - total 11 cycles
-	
+	lda 	#%00010000	;2
+	sta 	NUSIZ0		; 3 - total 11 cycles
+
 ; 	set food and disaster xpos dynamically in overscan :)
 	
 	; Initiating constants - bgcolor
@@ -424,10 +424,12 @@ DrawScreen	; setting x positions
 	dex 
 	bne 	.wastingTimeFood
 	
-	sta		RESBL
+	sta		RESM0
 	sta 	WSYNC
 	
 .burnSecondScanline ; for x positions
+	lda 	#%00000110	;2
+	sta 	NUSIZ1		; 3
 	
 	ldx 	disasterxpos ; how much time we want to wait for x to burn, 3
 .wastingTimeDisaster
@@ -468,8 +470,8 @@ DrawScreen	; setting x positions
 	lda 	disastercolorsgfx
 	sta 	COLUP1
 	
-	lda 	ballsettings
-	sta 	ENABL
+	lda 	missilesettings
+	sta 	ENAM0
 
 .startCheckSam ; total cycles: 
 	; does sam start on this scan line?
@@ -531,29 +533,29 @@ DrawScreen	; setting x positions
 	
 .endDisaster
 	
-.startCheckBall
-	cpx 	ballY
-	bne 	.loadBall
+.startCheckMissile
+	cpx 	missileY
+	bne 	.loadMissile
 	
-	lda 	#BALL_HEIGHT
-	sta 	drawball
-.loadBall
-	lda		drawball
+	lda 	#MISSILE_HEIGHT
+	sta 	drawmissile
+.loadMissile
+	lda		drawmissile
 	cmp 	#$FF
-	beq 	.noBall
+	beq 	.noMissile
 
 	lda 	#%00000010
-	sta 	ballsettings
+	sta 	missilesettings
 	
-	dec 	drawball
-	jmp 	.endBall
+	dec 	drawmissile
+	jmp 	.endMissile
 	
-.noBall
+.noMissile
 	lda 	#%00000000
-	sta 	ballsettings
+	sta 	missilesettings
 ;	sta 	WSYNC
 	
-.endBall
+.endMissile
 	
 	
 .endOfPlayfield
@@ -578,19 +580,16 @@ DrawScreen	; setting x positions
 	sta 	PF1
 	sta		PF2 ; if islands are "displaying," turn off
 	sta 	COLUPF
-	sta 	ENABL
-	
-	lda 	#0
-	sta 	GRP0	; turn player graphics off
-	sta 	GRP1
-	sta 	ENABL	; change to missile later
-	
+	sta 	ENAM0
+
 	; add hunger bar here
 	
 	dex
 	sta 	WSYNC
 	bne 	.finalspacer
+	
 	inc 	framecounter
+	
 	jmp 	.endAllKernels
 	
 ;screensaver stuff here 
@@ -601,9 +600,9 @@ DrawScreen	; setting x positions
 	
 .endAllKernels
 
-;------------------------------------------------
-; Overscan
-;------------------------------------------------
+;=====================================================================================
+; OVERSCAN
+;=====================================================================================
 	lda		#%01000010
 	sta		WSYNC
 	sta		VBLANK
@@ -1448,6 +1447,74 @@ TitleColors
    .byte $0E
    .byte $0E
    .byte $0E
+
+FoodXCoords
+	.byte #8
+	.byte #6
+	.byte #4
+	.byte #8
+	.byte #8;
+	.byte #2
+	.byte #6
+	.byte #2
+	.byte #8
+	.byte #2;
+	.byte #4
+	.byte #8
+	.byte #8
+	.byte #2
+	.byte #8;
+	
+FoodYCoords
+	.byte #75
+	.byte #9
+	.byte #97
+	.byte #9
+	.byte #97;
+	.byte #75
+	.byte #31
+	.byte #53
+	.byte #31
+	.byte #9;
+	.byte #75
+	.byte #97
+	.byte #31
+	.byte #97
+	.byte #75;
+
+DisasterXCoords
+	.byte #4
+	.byte #6
+	.byte #6
+	.byte #6
+	.byte #4;
+	.byte #6
+	.byte #6
+	.byte #6
+	.byte #4
+	.byte #6;
+	.byte #4
+	.byte #6
+	.byte #4
+	.byte #6
+	.byte #6;
+
+DisasterYCoords
+	.byte #34
+	.byte #56
+	.byte #78
+	.byte #34
+	.byte #34;
+	.byte #78
+	.byte #78
+	.byte #100
+	.byte #56
+	.byte #12;
+	.byte #56
+	.byte #78
+	.byte #78
+	.byte #56
+	.byte #100
 
 ;------------------------------------------------
 ; Interrupt Vectors

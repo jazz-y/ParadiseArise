@@ -36,9 +36,20 @@ BALL_HEIGHT = #5 ; actual is 6
 
 TOP_SPACER_HEIGHT = #10
 
-BALL_INITIAL_Y = #30
+BALL_INITIAL_Y = #100
 
 DISASTER_INITIAL_Y = #34
+
+; For DISASTER_XPOS_INIT:
+; 7 works best for volcanos right aligned
+; 5 for left align
+
+DISASTER_XPOS_INIT = #5 ; 
+
+; For FOOD_XPOS_INIT:
+; 2 works best (not very well) for ball first island
+
+FOOD_XPOS_INIT = #8
 
 ;------------------------------------------------
 ; RAM
@@ -108,8 +119,9 @@ resetonce 		.byte
 
 test 			.byte
 
-; condition stuff
-isdrawingisland	.byte
+; x positioning stuff
+disasterxpos	.byte
+foodxpos		.byte
 
 	echo [(* - $80)]d, " RAM bytes used"
 
@@ -185,8 +197,11 @@ Start
 	lda 	#BALL_INITIAL_Y
 	sta 	ballY
 	
-	lda 	#0
-	sta 	isdrawingisland ; so the spacer is drawn first 
+	lda 	#FOOD_XPOS_INIT
+	sta 	foodxpos
+	
+	lda 	#DISASTER_XPOS_INIT
+	sta 	disasterxpos
 	
 ;	lda 	#0
 ;	sta 	PF0
@@ -389,33 +404,49 @@ CheckJoyRight
 	sta 	HMOVE ; strobing HMOVE
 	sta		VBLANK
 	
-;------------------------------------------------
-; Kernel
-;------------------------------------------------	
-DrawScreen
-	lda		bgcolor
-	sta		COLUBK
+;==============================================================================
+; X POSITIONING: WASTING 2 SCAN LINES
+;==============================================================================
+; 22 (2/3) cycles of horiz blank
+DrawScreen	; setting x positions
+
+.burnFirstScanLine ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	lda		bgcolor	;3
+	sta		COLUBK	;3
+	lda 	#%00000110	;2
+	sta 	NUSIZ1		; 3 - total 11 cycles
 	
-	lda 	#0
-	sta 	ENABL
+; 	set food and disaster xpos dynamically in overscan :)
 	
-	lda 	#%00000110
-	sta 	NUSIZ1
 	; Initiating constants - bgcolor
+	ldx 	foodxpos	;3
+.wastingTimeFood ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	dex 
+	bne 	.wastingTimeFood
 	
+	sta		RESBL
 	sta 	WSYNC
 	
-	lda 	#5
-	sta 	test
+.burnSecondScanline ; for x positions
 	
-	sleep	#test
-	sta		RESP1
+	ldx 	disasterxpos ; how much time we want to wait for x to burn, 3
+.wastingTimeDisaster
+
+	dex							; 2
+	bne 	.wastingTimeDisaster	; not taken, 2, otherwise 3
+	
+	; total time: 2(n-1) + 7 (3 to load, 2 when last not taken, 2 for last dex)
+	; simplified: 2n + 5 cycles
+	sta 	RESP1
+	
 		
-	ldx 	#SAM_RANGE-1 ; this will be the playfiield "range"
+	ldx 	#SAM_RANGE-1 ; this will be the playfield "range"
 	sta 	WSYNC
 	
-; DISCLAIMER: make the islands part of the PF, add sprites as the island disasters.
-.drawPlayfield
+;==============================================================================
+; MAIN KERNEL
+;==============================================================================
+.drawPlayfield 
 
 ;	drawing all previously calculated player stuff
 
@@ -552,6 +583,7 @@ DrawScreen
 	lda 	#0
 	sta 	GRP0	; turn player graphics off
 	sta 	GRP1
+	sta 	ENABL	; change to missile later
 	
 	; add hunger bar here
 	
@@ -559,6 +591,15 @@ DrawScreen
 	sta 	WSYNC
 	bne 	.finalspacer
 	inc 	framecounter
+	jmp 	.endAllKernels
+	
+;screensaver stuff here 
+;=====================================================================================
+; SCREENSAVER KERNEL
+;=====================================================================================
+	
+	
+.endAllKernels
 
 ;------------------------------------------------
 ; Overscan
@@ -573,6 +614,9 @@ DrawScreen
 ; ===============================================
 ; TIMER SETUP
 ; ===============================================	
+.startTimer 	; include this code once screensaver is set up
+;	lda 	resetonce		; if not reset once, then don't start timer
+;	beq 	.skipTimer
 
 .checkFrameCounter
 	lda 	framecounter
@@ -592,6 +636,11 @@ DrawScreen
 	sta 	secondscounter
 		
 .noAddMin
+
+
+
+
+.skipTimer
 
 .waitForOverscan
 	lda     INTIM

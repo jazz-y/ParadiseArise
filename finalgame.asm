@@ -21,10 +21,11 @@ BLUE = #$AC
 SAM_HEIGHT = #9 ; actual is 10
 ; actual island height is 25
 ISLAND_HEIGHT = #25
-SAM_INITIAL_Y = #30
+SAM_INITIAL_Y = #90
 ISLAND_ROWS = #3
 SPACER_HEIGHT = #9
-LAST_SPACER_HEIGHT = #2
+LAST_SPACER_HEIGHT = #26 ; make this half later, will probably need
+						 ; 2 scan lines
 
 ; for now
 SAM_RANGE = #109 ; 110 is the true value rn
@@ -103,6 +104,9 @@ ballY			.byte
 gameover 		.byte
 addtohungerbar 	.byte
 maincounter 	.byte
+resetonce 		.byte
+
+test 			.byte
 
 ; condition stuff
 isdrawingisland	.byte
@@ -217,6 +221,7 @@ MainLoop
 	lda 	#%00000001
 	bit 	SWCHB
 	bne		Next
+	; LATER - add logic to determine if loading the title screen or the game
 	jmp		Start
 	
 Next
@@ -297,12 +302,12 @@ CheckJoyRight
 .checkSpaceBar		; left joystick fire
 	lda 	#%10000000
 	bit 	INPT4
-	bne 	.skipSpacebarSound
-	lda 	#%10001000
+	bne 	.skipSpacebarSound		; branch if not 0
+	lda 	#%00000100
 	sta 	AUDF1
-	lda 	#%00000101
+	lda 	#%00001111
 	sta 	AUDC1
-	lda 	#%00000101
+	lda 	#%00000001
 	sta 	AUDV1
 	jmp		.endCheckSpacebar
 
@@ -329,26 +334,57 @@ CheckJoyRight
 .noDisasterCollision
 
 .checkTouchingFood
+	lda 	#00
+	lda 	#00
+	lda 	#00
 	lda		CXP0FB
-	and 	#%10000000
+	and 	#%01000000 	; checking to see if P0 and ball are colliding, only care where bit is 1
+						; in mask (what bit is 1)
 	beq 	.noFoodCollision
 	lda 	#1
 	sta 	addtohungerbar
+;	inc 	hungerHealth 	; kinda like health?
+	lda 	#$FF
+	sta 	drawball		; always branches to no sprite when FF
+	sta		ballY			; FF will never be reached in scanline counter
+	jmp 	.endFoodCollisionCheck
 	
 .noFoodCollision
+;	lda 	#BALL_INITIAL_Y
+;	sta 	ballY
 
-;.checkTouchingWater				; more accurate to say that it's checking to see if feet are
-;	ldy 	#SAM_HEIGHT
-;	lda 	(samgfx),y			; touching the playfield
-;	and 	#%
+.endFoodCollisionCheck
+	
 
-.noTouchingWater
+.checkPFCollision
+	lda 	CXP0FB
+	and 	#%10000000
+	beq		.noPFCollision	; branch if not 0 (not colliding
+;	lda 	#%00000101		; for checking if collisions are being detected
+;	sta 	AUDV1
+	
+	jmp 	.endPFCollisionCheck
 
+.noPFCollision
+	lda 	#%10000000
+	bit 	INPT4
+	bne		.notJumping		; 0 for INPT4 = being pressed, 1 is not pressed
+;	lda 	#0
+;	sta 	AUDV1
+	
+	jmp 	.endPFCollisionCheck
+	
+.notJumping
+	lda 	#1
+	sta 	gameover
+	
 
+.endPFCollisionCheck
 	
 .waitForVBlank
 	lda		INTIM
 	bne		.waitForVBlank
+	sta 	CXCLR
 	sta		WSYNC
 	sta 	HMOVE ; strobing HMOVE
 	sta		VBLANK
@@ -366,12 +402,16 @@ DrawScreen
 	lda 	#%00000110
 	sta 	NUSIZ1
 	; Initiating constants - bgcolor
-	ldx 	#SAM_RANGE-1 ; this will be the playfiield "range"
+	
 	sta 	WSYNC
-
-	sleep	27
+	
+	lda 	#5
+	sta 	test
+	
+	sleep	#test
 	sta		RESP1
 		
+	ldx 	#SAM_RANGE-1 ; this will be the playfiield "range"
 	sta 	WSYNC
 	
 ; DISCLAIMER: make the islands part of the PF, add sprites as the island disasters.
@@ -511,6 +551,7 @@ DrawScreen
 	
 	lda 	#0
 	sta 	GRP0	; turn player graphics off
+	sta 	GRP1
 	
 	; add hunger bar here
 	

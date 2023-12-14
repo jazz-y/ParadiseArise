@@ -55,7 +55,7 @@ HUNGERPF0_INIT = #%11110000
 HUNGERPF1_INIT = #%11111111
 HUNGERPF2_INTI = #%11111111
 
-HEALTH_BAR_HEIGHT = #10
+HEALTH_BAR_HEIGHT = #20
 
 HEALTHBAR_COLOR = #$36
 
@@ -597,7 +597,7 @@ DrawScreen	; setting x positions
 .endmainstuff
 	; original is 42
 	
-	ldx 	#LAST_SPACER_HEIGHT
+;	ldy 	#LAST_SPACER_HEIGHT-4
 ; Bottom part - score will go here
 .finalspacer
 	lda 	#0
@@ -605,28 +605,43 @@ DrawScreen	; setting x positions
 	sta		PF2 ; if islands are "displaying," turn off
 	sta 	COLUPF
 	sta 	ENAM0
+	lda 	#0
+	sta 	CTRLPF		; turn mirroring off
 	lda 	#HEALTHBAR_COLOR
 	sta 	healthbarcolor
 	
-;	sta 	WSYNC
-;	sta 	WSYNC
-;	sta 	WSYNC
-;	sta 	WSYNC
+	
+	sta 	WSYNC
+	sta 	WSYNC
+	sta 	WSYNC
+	sta 	WSYNC
+	sta 	WSYNC
 
 	; add hunger bar here
-;	ldx 	#HEALTH_BAR_HEIGHT-4
+	ldx 	#HEALTH_BAR_HEIGHT ; 10 scan lines + 4 (from above) = 14
 .drawHealthBar
-;	lda 	hungerPF0	
-;	sta 	PF0
-;	lda 	hungerPF1
-;	sta 	PF1
-;	lda 	hungerPF2
-;	sta		PF2
+	lda 	healthbarcolor
+	sta 	COLUPF
+	lda 	hungerPF0	
+	sta 	PF0
+	lda 	hungerPF1
+	sta 	PF1
+	lda 	hungerPF2
+	sta		PF2
 	
 	dex
 	sta 	WSYNC
-	bne 	.finalspacer
+	bne 	.drawHealthBar
 	
+	ldx 	#$06
+.lastSpacer
+	lda 	#0
+	sta 	PF0
+	sta 	PF1
+	sta 	PF2
+	sta 	COLUPF
+	dex
+	bne 	.lastSpacer
 	
 	jmp 	.endAllKernels
 	

@@ -132,6 +132,7 @@ rowindex		.byte
 disasterspriteindex		.byte
 
 reachedlimit	.byte
+hungersecondscounter	.byte
 
 ; x positioning stuff
 disasterxpos	.byte
@@ -226,6 +227,12 @@ Start
 	
 	lda 	#DISASTER_XPOS_INIT
 	sta 	disasterxpos
+	
+	lda 	#%11111111
+	sta 	hungerPF1
+	sta 	hungerPF2
+	lda 	#%11110000
+	sta 	hungerPF0
 	
 	lda 	#1
 	sta 	secondscounter
@@ -629,17 +636,32 @@ DrawScreen	; setting x positions
 	lda 	hungerPF2
 	sta		PF2
 	
+	ldy 	#$02
+.wasteLoop
+	dey
+	bne 	.wasteLoop
+	nop
+	nop
+	
+	lda 	#0
+	sta 	PF0
+	sta 	PF1 
+	sta 	PF2
+	
 	dex
 	sta 	WSYNC
 	bne 	.drawHealthBar
 	
-	ldx 	#$06
+	ldx 	#$02
 .lastSpacer
 	lda 	#0
 	sta 	PF0
 	sta 	PF1
 	sta 	PF2
 	sta 	COLUPF
+	
+
+	
 	dex
 	bne 	.lastSpacer
 	
@@ -681,6 +703,7 @@ DrawScreen	; setting x positions
 	bne		.noAddSec
 	
 	inc 	secondscounter	; old way of increasing count
+	inc 	hungersecondscounter
 ;	sed 	; set decimal flag
 ;	clc		
 ;	lda 	secondscounter	; saving everything in decimal mode, bcd
@@ -753,15 +776,6 @@ DrawScreen	; setting x positions
 .not10
 	
 .phase2
-;	lda 	secondscounter		; speed up game - if timers starts working
-;	and 	#%00000111
-;	bne 	.notMultipleOf8
-	
-	
-.notMultipleOf8
-	
-
-
 
 .skipTimer
 
@@ -769,60 +783,74 @@ DrawScreen	; setting x positions
 ; UPDATE THE HEALTH BAR (hunger bar)
 ; ==============================================================================
 
-;.updateHealthBar
-;	lda 	secondscounter
-;	cmp 						; add in comparison later
+.decreaseHealthBar
+	lda 	hungersecondscounter
+	cmp 	#$0C				; nts: C = 12 in hex
+	bne		.noHungerDecrease
 
-;.isTimeToDecrease	
+.isTimeToDecrease	
 	; decrease hungerbarcounter here, or most likely at the end of this thing
 ;	ldx 	hungerbarcounter
-;	
-;	lda 	hungerPF2counter
-;	cmp 	#7					; 7 decimal = 7 hex
-;	bne 	.updateHungerPF2
-;	lda 	hungerPF1counter
-;	cmp 	#7 
-;	bne 	.updateHungerPF1
-;	lda 	hungerPF0counter
-;	cmp 	#3
-;	bne 	.updateHungerPF0
-;	
+	
+	lda 	hungerPF2counter
+	cmp 	#7					; 7 decimal = 7 hex
+	bne 	.updateHungerPF2
+	
+	lda 	hungerPF1counter
+	cmp 	#7 
+	bne 	.updateHungerPF1
+	
+	lda 	hungerPF0counter
+	cmp 	#3
+	bne 	.updateHungerPF0
+	
 ;	lda 	#1
 ;	sta 	gameover
-;
-;.updateHungerPF2
-;	ldx 	hungerPF2counter
-;	lda 	HealthBarPF2,x
-;	sta 	hungerPF2
+	jmp 	.endHungerBarDecrease
 
-
-
-;.updateHungerPF1
-
-
-
-;.updateHungerPF0
-
-
-;	lda		HealthBarPF0,x
-;	sta 	hungerPF0
-;	
-;	lda 	HealthBarPF1,x
-;	sta 	hungerPF1
+.updateHungerPF2
+	ldx 	hungerPF2counter
+	lda 	HealthBarPF2,x
+	sta 	hungerPF2
 	
+	inc 	hungerPF2counter
+	
+	jmp 	.resetHungerSecondsCounter
 
+.updateHungerPF1
+	ldx 	hungerPF1counter
+	lda 	HealthBarPF1,x
+	sta		hungerPF1
+	
+	inc 	hungerPF1counter
+	
+	jmp 	.resetHungerSecondsCounter
 
-;	cpx 	#$14				; 20 in decimal, since PF 1 and 2 is 1 byte = 8 bits,
-								; PF0 is 4 bits = 20 bits
-;	beq 	.setGameOverHunger
+.updateHungerPF0
+	ldx 	hungerPF0counter
+	lda 	HealthBarPF0,x
+	sta 	hungerPF0
 	
-;	dec 	hungerbarcounter
+	inc		hungerPF0counter
+		
+.resetHungerSecondsCounter	
+	lda 	#0
+	sta 	hungersecondscounter
+		
+.noHungerDecrease
 	
 	
-;.setGameOverHunger
+.endHungerBarDecrease
+
+;.increaseHungerBar
+
+;	lda 	foodcollected
+;	beq		.noFoodCollected
 	
 	
-;.endHungerBarCheck
+	
+	
+;.noFoodCollected
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; end ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

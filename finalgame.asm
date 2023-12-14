@@ -51,6 +51,12 @@ DISASTER_XPOS_INIT = #6 ;
 
 FOOD_XPOS_INIT = #4
 
+HUNGERPF0_INIT = #%11110000
+HUNGERPF1_INIT = #%11111111
+HUNGERPF2_INTI = #%11111111
+
+HEALTH_BAR_HEIGHT = #10
+
 ;------------------------------------------------
 ; RAM
 ;------------------------------------------------
@@ -126,6 +132,11 @@ disasterspriteindex		.byte
 ; x positioning stuff
 disasterxpos	.byte
 foodxpos		.byte
+
+hungerPF0		.byte
+hungerPF1		.byte
+hungerPF2		.byte
+hungerbarcounter 	.byte
 
 	echo [(* - $80)]d, " RAM bytes used"
 
@@ -592,8 +603,6 @@ DrawScreen	; setting x positions
 	sta 	WSYNC
 	bne 	.finalspacer
 	
-	inc 	framecounter ; <------------------------- adding to frame counter after every
-													; frame possible is drawn 
 	
 	jmp 	.endAllKernels
 	
@@ -617,45 +626,65 @@ DrawScreen	; setting x positions
 	;***** Overscan Code goes here
 ; ===============================================
 ; TIMER SETUP
-; ===============================================	
-.startTimer 	; include this code once screensaver is set up
+; ===============================================
+
+	inc 	framecounter ; <------------------------- adding to frame counter after every
+													; frame possible is drawn 
+	
+.startTimer 
 ;	lda 	resetonce		; if not reset once, then don't start timer
-;	beq 	.skipTimer
+;	beq 	.skipTimer		; for implementing screensaver later
+
 
 .checkFrameCounter
 	lda 	framecounter
-	cmp 	#60 			; 60 fps 
+	cmp 	#$60 			; 60 fps 
 	bne		.noAddSec
-	inc 	secondscounter
+;	inc 	secondscounter	; old way of increasing count
+	sed 	; set decimal flag
+	clc		
+	lda 	secondscounter	; saving everything in decimal mode, bcd
+	adc 	#$01			
+	sta 	secondscounter
+	cld						; decimal mode off
+	
 	lda 	#0
 	sta 	framecounter
 	
 .noAddSec
 
 	lda 	secondscounter		; since intializing secondscounter as 1, count up to 61
-	cmp 	#61
+	cmp 	#$61				; since num is bcd
 	bne 	.noAddMin
-	inc 	mincounter
-	lda 	#1
+;	inc 	mincounter			; old way
+	sed 	
+	clc
+	lda 	mincounter
+	adc 	#$01
+	sta 	mincounter
+	cld
+	
+	lda 	#0
 	sta 	secondscounter
 		
 .noAddMin
 
-.changeGame ; commented out 645 - 647
-;	lda 	mincounter
-;	cmp 	#0
-;	bne		.phase2	; after a min. of gameplay, the game should speed up a bit (todo)
+.changeGame 
+	lda 	mincounter
+	cmp 	#0
+	bne		.phase2	; after a min. of gameplay, the game should speed up a bit (todo)
 	
 ;	lda 	secondscounter
 ;	cmp 	#0 
 ;	beq 	.notMultipleOf10 	; I know its bad lol
 	
-	lda 	secondscounter
-	and 	#%00001111 ; checking if counter is a multiple of 10 (FOR NOW)
+	lda 	#<secondscounter	; if the low byte is all 0, then the bcd is a multiple of 10
+;	and 	#%00001111 ; checking if counter is a multiple of 10 [IGNORE THIS LINE, OLD]
 	bne 	.notMultipleOf10
 	
-	ldx 	rowindex
-	cmp 	#14 			; without lines 658 and 660 the volcanos appear for a hot second
+	ldx 	rowindex		; 
+	cmp 	#$0E 			; 14 in hex
+							; without lines 658 and 660 the volcanos appear for a hot second
 							; and then volcanos and food disappear???
 	beq 	.skipTimer
 	
@@ -669,15 +698,17 @@ DrawScreen	; setting x positions
 	lda 	DisasterYCoords,x
 	sta 	disasterY
 	
-;	lda 	#$FF			; commenting these out makes no difference in results
-;	sta 	drawmissile
+	lda 	#$FF			; commenting these out makes no difference in results
+	sta 	drawmissile
 	
 	inc 	rowindex
+	
+;	cld 	; CLEAR DECIMAL FLAG opcode
 	
 .notMultipleOf10
 	
 .phase2
-;	lda 	secondscounter
+;	lda 	secondscounter		; speed up game - if timers starts working
 ;	and 	#%00000111
 ;	bne 	.notMultipleOf8
 	
@@ -1565,7 +1596,7 @@ DisasterYCoords
 	.byte #100;
 
 HealthBarPF1
-	.byte #%11111111
+;	.byte #%11111111
 	.byte #%11111110
 	.byte #%11111100
 	.byte #%11111000
@@ -1576,7 +1607,7 @@ HealthBarPF1
 	.byte #%00000000
 	
 HealthBarPF2
-	.byte #%11111111
+;	.byte #%11111111
 	.byte #%11111110
 	.byte #%11111100
 	.byte #%11111000
@@ -1587,7 +1618,7 @@ HealthBarPF2
 	.byte #%00000000
 	
 HealthBarPF0
-	.byte #%11110000
+;	.byte #%11110000
 	.byte #%11100000
 	.byte #%11000000
 	.byte #%10000000

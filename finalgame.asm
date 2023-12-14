@@ -149,6 +149,8 @@ hungerPF0counter 	.byte
 hungerPF1counter	.byte
 hungerPF2counter 	.byte
 
+hungerbargfx		.byte
+
 	echo [(* - $80)]d, " RAM bytes used"
 
 ;------------------------------------------------
@@ -234,6 +236,9 @@ Start
 	sta 	hungerPF2
 	lda 	#%11110000
 	sta 	hungerPF0
+	
+	lda 	#%11111111
+	sta 	hungerbargfx
 	
 	lda 	#1
 	sta 	secondscounter
@@ -630,12 +635,9 @@ DrawScreen	; setting x positions
 .drawHealthBar
 	lda 	healthbarcolor
 	sta 	COLUPF
-	lda 	hungerPF0	
-	sta 	PF0
-	lda 	hungerPF1
+	
+	lda 	hungerbargfx
 	sta 	PF1
-	lda 	hungerPF2
-	sta		PF2
 	
 ;	ldy 	#$02
 ;.wasteLoop
@@ -645,9 +647,8 @@ DrawScreen	; setting x positions
 ;	nop
 	
 ;	lda 	#0
-;	sta 	PF0
-;	sta 	PF1 
-;	sta 	PF2
+;	sta 	PF0		; later - only want to show health bar on one side
+
 	
 	dex
 	sta 	WSYNC
@@ -722,7 +723,7 @@ DrawScreen	; setting x positions
 	cmp 	#$0A				; nts: A = 10 in hex
 	bne 	.noAddIter
 	
-	inc 	itercounter			; old way
+	inc 	itercounter			; not used
 	
 	inc 	reachedlimit		; should equal 1
 ;	sed 	
@@ -750,9 +751,13 @@ DrawScreen	; setting x positions
 	beq 	.not10			; branch if 0 -> didn't reach 10
 	
 	ldx 	rowindex		; 
-	cpx 	#$0F 			; 14 in hex
-							; without lines 658 and 660 the volcanos appear for a hot second
-							; and then volcanos and food disappear???
+; =========================================================================
+; 	IMPORTANT below
+; =========================================================================	
+
+	cpx 	#$0F 			; 14 in hex  - CHANGE LATER ONCE MORE VALUES ARE ADDED
+							; TO X AND Y TABLES
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	beq 	.skipTimer
 	
 	lda 	FoodXCoords,x
@@ -772,17 +777,44 @@ DrawScreen	; setting x positions
 	
 	inc 	rowindex
 	
-;	cld 	; CLEAR DECIMAL FLAG opcode
-	
 .not10
 	
-.phase2
+;.phase2
 
 .skipTimer
 
 ; ==============================================================================
-; UPDATE THE HEALTH BAR (hunger bar)
+; UPDATE THE HUNGER BAR (hunger bar)
 ; ==============================================================================
+
+.increaseHungerBar
+
+	lda 	foodcollected
+	beq		.noFoodCollected	; if zero, don't update hunger bar
+	
+	lda 	hungerbarcounter
+	bne		.notFull			; if counter is zero, the hunger bar is still full,
+								; so don't update it.
+	lda 	#0
+	sta 	hungersecondscounter	; if the hunger bar is full, just reset seconds counter
+	jmp 	.updateFoodCollected
+	
+.notFull
+	dec 	hungerbarcounter
+	ldx 	hungerbarcounter
+	lda 	HungerBarPF1,x
+	sta 	hungerbargfx
+
+
+.updateFoodCollected
+	
+	dec 	foodcollected	;set it to 0 again
+	
+.noFoodCollected
+
+.endIncreaseHungerBar
+;;;;;;;;;;;;;;;;;;;;;;;;; decreasing food bar ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 
 .decreaseHealthBar
 	lda 	hungersecondscounter
@@ -792,114 +824,29 @@ DrawScreen	; setting x positions
 .isTimeToDecrease	
 	; decrease hungerbarcounter here, or most likely at the end of this thing
 ;	ldx 	hungerbarcounter
-	
-	lda 	hungerPF2counter
-	cmp 	#8					; 7 decimal = 7 hex
-	bne 	.updateHungerPF2
-	
-	lda 	hungerPF1counter
-	cmp 	#8 
-	bne 	.updateHungerPF1
-	
-	lda 	hungerPF0counter
-	cmp 	#4
-	bne 	.updateHungerPF0
-	
-;	lda 	#1
-;	sta 	gameover
-	jmp 	.endHungerBarDecrease
+	lda 	hungerbarcounter
+	cmp 	#8				; index 8 in the table (empty health bar)
+	beq 	.setGameOverStarve
 
-.updateHungerPF2
-	ldx 	hungerPF2counter
-	lda 	HealthBarPF2,x
-	sta 	hungerPF2
+	inc 	hungerbarcounter
 	
-	inc 	hungerPF2counter
-	
-	jmp 	.resetHungerSecondsCounter
-
-.updateHungerPF1
-	ldx 	hungerPF1counter
-	lda 	HealthBarPF1,x
-	sta		hungerPF1
-	
-	inc 	hungerPF1counter
-	
-	jmp 	.resetHungerSecondsCounter
-
-.updateHungerPF0
-	ldx 	hungerPF0counter
-	lda 	HealthBarPF0,x
-	sta 	hungerPF0
-	
-	inc		hungerPF0counter
+	ldx 	hungerbarcounter
+	lda 	HungerBarPF1,x
+	sta 	hungerbargfx
 		
 .resetHungerSecondsCounter	
 	lda 	#0
 	sta 	hungersecondscounter
+	jmp 	.noHungerDecrease
+
+.setGameOverStarve
+	lda		#1
+	sta 	gameover
 		
 .noHungerDecrease
 		
 .endHungerBarDecrease
-
-
-
-.increaseHungerBar
-
-	lda 	foodcollected
-	beq		.noFoodCollected	; if zero, don't update hunger bar
 	
-	lda 	hungerPF2counter
-	bne		.notFull
-	
-	lda 	#0
-	sta 	hungersecondscounter	; if the hunger bar is full, just reset counter
-	jmp 	.updateFoodCollected
-	
-.notFull
-	
-	lda 	hungerPF2counter
-	cmp 	#8					; 7 decimal = 7 hex
-	bne 	.incHungerPF2
-	
-	lda 	hungerPF1counter
-	cmp 	#8 
-	bne 	.incHungerPF1
-	
-	lda 	hungerPF0counter
-	cmp 	#4
-	bne 	.incHungerPF0
-	
-.incHungerPF2
-;	lda 	hungerPF2counter
-	
-	
-	dec 	hungerPF2counter
-	ldx 	hungerPF2counter
-	lda 	HealthBarPF2,x
-	sta 	hungerPF2
-	jmp 	.updateFoodCollected
-
-.incHungerPF1
-	dec 	hungerPF1counter
-	ldx 	hungerPF1counter
-	lda 	HealthBarPF1,x
-	sta 	hungerPF1
-	jmp 	.updateFoodCollected
-
-.incHungerPF0
-	dec 	hungerPF0counter
-	ldx 	hungerPF0counter
-	lda 	HealthBarPF0,x
-	sta 	hungerPF0
-
-.updateFoodCollected
-	
-	dec 	foodcollected
-	
-.noFoodCollected
-	
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; end ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -1778,7 +1725,7 @@ DisasterYCoords
 	.byte #56
 	.byte #100;
 
-HealthBarPF1
+HungerBarPF1
 	.byte #%11111111
 	.byte #%11111110
 	.byte #%11111100
@@ -1790,7 +1737,7 @@ HealthBarPF1
 	.byte #%00000000
 
 	
-HealthBarPF2
+HungerBarPF2
 	.byte #%11111111
 	.byte #%01111111
 	.byte #%00111111
@@ -1801,124 +1748,14 @@ HealthBarPF2
 	.byte #%00000001
 	.byte #%00000000
 	
-HealthBarPF0
+HungerBarPF0
 	.byte #%11110000
 	.byte #%01110000
 	.byte #%00110000
 	.byte #%00010000
 	.byte #%00000000
 	
-HungerBarSprites
-	.byte 	<HungerBar0
-	.byte 	<HungerBar1
-	.byte 	<HungerBar2
-	.byte 	<HungerBar3
-	.byte 	<HungerBar4
-	.byte 	<HungerBar5
-	.byte 	<HungerBar6
-	.byte 	<HungerBar7
-	.byte 	<HungerBar8
 
-HungerBarStuff
-HungerBar0
-        .byte #%11111111;--
-        .byte #%11111111;--
-        .byte #%11111111;--
-        .byte #%11111111;--
-        .byte #%11111111;--
-        .byte #%11111111;--
-        .byte #%11111111;--
-        .byte #%11111111;--
-        .byte #%11111111;--
-        .byte #%11111111;--
-HungerBar1
-        .byte #%11111110;--
-        .byte #%11111110;--
-        .byte #%11111110;--
-        .byte #%11111110;--
-        .byte #%11111110;--
-        .byte #%11111110;--
-        .byte #%11111110;--
-        .byte #%11111110;--
-        .byte #%11111110;--
-        .byte #%11111110;--
-HungerBar2
-        .byte #%11111100;--
-        .byte #%11111100;--
-        .byte #%11111100;--
-        .byte #%11111100;--
-        .byte #%11111100;--
-        .byte #%11111100;--
-        .byte #%11111100;--
-        .byte #%11111100;--
-        .byte #%11111100;--
-        .byte #%11111100;--
-HungerBar3
-        .byte #%11111000;--
-        .byte #%11111000;--
-        .byte #%11111000;--
-        .byte #%11111000;--
-        .byte #%11111000;--
-        .byte #%11111000;--
-        .byte #%11111000;--
-        .byte #%11111000;--
-        .byte #%11111000;--
-        .byte #%11111000;--
-HungerBar4
-        .byte #%11110000;--
-        .byte #%11110000;--
-        .byte #%11110000;--
-        .byte #%11110000;--
-        .byte #%11110000;--
-        .byte #%11110000;--
-        .byte #%11110000;--
-        .byte #%11110000;--
-        .byte #%11110000;--
-        .byte #%11110000;--
-HungerBar5
-        .byte #%11100000;--
-        .byte #%11100000;--
-        .byte #%11100000;--
-        .byte #%11100000;--
-        .byte #%11100000;--
-        .byte #%11100000;--
-        .byte #%11100000;--
-        .byte #%11100000;--
-        .byte #%11100000;--
-        .byte #%11100000;--
-HungerBar6
-        .byte #%11000000;--
-        .byte #%11000000;--
-        .byte #%11000000;--
-        .byte #%11000000;--
-        .byte #%11000000;--
-        .byte #%11000000;--
-        .byte #%11000000;--
-        .byte #%11000000;--
-        .byte #%11000000;--
-        .byte #%11000000;--
-HungerBar7
-        .byte #%10000000;--
-        .byte #%10000000;--
-        .byte #%10000000;--
-        .byte #%10000000;--
-        .byte #%10000000;--
-        .byte #%10000000;--
-        .byte #%10000000;--
-        .byte #%10000000;--
-        .byte #%10000000;--
-        .byte #%10000000;--
-HungerBar8
-        .byte #%00000000;--
-        .byte #%00000000;--
-        .byte #%00000000;--
-        .byte #%00000000;--
-        .byte #%00000000;--
-        .byte #%00000000;--
-        .byte #%00000000;--
-        .byte #%00000000;--
-        .byte #%00000000;--
-        .byte #%00000000;--
 
 ;------------------------------------------------
 ; Interrupt Vectors

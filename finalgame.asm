@@ -133,6 +133,7 @@ disasterspriteindex		.byte
 
 reachedlimit	.byte
 hungersecondscounter	.byte
+foodcollected	.byte
 
 ; x positioning stuff
 disasterxpos	.byte
@@ -387,9 +388,9 @@ CheckJoyRight
 	and 	#%01000000 	; checking to see if P0 and missile are colliding, only care where bit is 1
 						; in mask (what bit is 1)
 	beq 	.noFoodCollision
-	lda 	#1
-	sta 	addtohungerbar
-;	inc 	hungerHealth 	; kinda like health?
+	
+	inc 	foodcollected
+
 	lda 	#$FF
 	sta 	drawmissile		; always branches to no sprite when FF
 	sta		missileY			; FF will never be reached in scanline counter
@@ -636,17 +637,17 @@ DrawScreen	; setting x positions
 	lda 	hungerPF2
 	sta		PF2
 	
-	ldy 	#$02
-.wasteLoop
-	dey
-	bne 	.wasteLoop
-	nop
-	nop
+;	ldy 	#$02
+;.wasteLoop
+;	dey
+;	bne 	.wasteLoop
+;	nop
+;	nop
 	
-	lda 	#0
-	sta 	PF0
-	sta 	PF1 
-	sta 	PF2
+;	lda 	#0
+;	sta 	PF0
+;	sta 	PF1 
+;	sta 	PF2
 	
 	dex
 	sta 	WSYNC
@@ -793,15 +794,15 @@ DrawScreen	; setting x positions
 ;	ldx 	hungerbarcounter
 	
 	lda 	hungerPF2counter
-	cmp 	#7					; 7 decimal = 7 hex
+	cmp 	#8					; 7 decimal = 7 hex
 	bne 	.updateHungerPF2
 	
 	lda 	hungerPF1counter
-	cmp 	#7 
+	cmp 	#8 
 	bne 	.updateHungerPF1
 	
 	lda 	hungerPF0counter
-	cmp 	#3
+	cmp 	#4
 	bne 	.updateHungerPF0
 	
 ;	lda 	#1
@@ -838,19 +839,67 @@ DrawScreen	; setting x positions
 	sta 	hungersecondscounter
 		
 .noHungerDecrease
-	
-	
+		
 .endHungerBarDecrease
 
-;.increaseHungerBar
 
-;	lda 	foodcollected
-;	beq		.noFoodCollected
+
+.increaseHungerBar
+
+	lda 	foodcollected
+	beq		.noFoodCollected	; if zero, don't update hunger bar
+	
+	lda 	hungerPF2counter
+	bne		.notFull
+	
+	lda 	#0
+	sta 	hungersecondscounter	; if the hunger bar is full, just reset counter
+	jmp 	.updateFoodCollected
+	
+.notFull
+	
+	lda 	hungerPF2counter
+	cmp 	#8					; 7 decimal = 7 hex
+	bne 	.incHungerPF2
+	
+	lda 	hungerPF1counter
+	cmp 	#8 
+	bne 	.incHungerPF1
+	
+	lda 	hungerPF0counter
+	cmp 	#4
+	bne 	.incHungerPF0
+	
+.incHungerPF2
+;	lda 	hungerPF2counter
 	
 	
+	dec 	hungerPF2counter
+	ldx 	hungerPF2counter
+	lda 	HealthBarPF2,x
+	sta 	hungerPF2
+	jmp 	.updateFoodCollected
+
+.incHungerPF1
+	dec 	hungerPF1counter
+	ldx 	hungerPF1counter
+	lda 	HealthBarPF1,x
+	sta 	hungerPF1
+	jmp 	.updateFoodCollected
+
+.incHungerPF0
+	dec 	hungerPF0counter
+	ldx 	hungerPF0counter
+	lda 	HealthBarPF0,x
+	sta 	hungerPF0
+
+.updateFoodCollected
 	
+	dec 	foodcollected
 	
-;.noFoodCollected
+.noFoodCollected
+	
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; end ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -1730,33 +1779,146 @@ DisasterYCoords
 	.byte #100;
 
 HealthBarPF1
-;	.byte #%11111111
+	.byte #%11111111
 	.byte #%11111110
 	.byte #%11111100
 	.byte #%11111000
-	.byte #%11110000; 4
+	.byte #%11110000
 	.byte #%11100000
 	.byte #%11000000
 	.byte #%10000000
-	.byte #%00000000; 8
+	.byte #%00000000
+
 	
 HealthBarPF2
-;	.byte #%11111111
-	.byte #%11111110
-	.byte #%11111100
-	.byte #%11111000
-	.byte #%11110000; 4
-	.byte #%11100000
-	.byte #%11000000
-	.byte #%10000000
-	.byte #%00000000; 8
+	.byte #%11111111
+	.byte #%01111111
+	.byte #%00111111
+	.byte #%00011111
+	.byte #%00001111
+	.byte #%00000111
+	.byte #%00000011
+	.byte #%00000001
+	.byte #%00000000
 	
 HealthBarPF0
-;	.byte #%11110000
-	.byte #%11100000
-	.byte #%11000000
-	.byte #%10000000
-	.byte #%00000000; 4 
+	.byte #%11110000
+	.byte #%01110000
+	.byte #%00110000
+	.byte #%00010000
+	.byte #%00000000
+	
+HungerBarSprites
+	.byte 	<HungerBar0
+	.byte 	<HungerBar1
+	.byte 	<HungerBar2
+	.byte 	<HungerBar3
+	.byte 	<HungerBar4
+	.byte 	<HungerBar5
+	.byte 	<HungerBar6
+	.byte 	<HungerBar7
+	.byte 	<HungerBar8
+
+HungerBarStuff
+HungerBar0
+        .byte #%11111111;--
+        .byte #%11111111;--
+        .byte #%11111111;--
+        .byte #%11111111;--
+        .byte #%11111111;--
+        .byte #%11111111;--
+        .byte #%11111111;--
+        .byte #%11111111;--
+        .byte #%11111111;--
+        .byte #%11111111;--
+HungerBar1
+        .byte #%11111110;--
+        .byte #%11111110;--
+        .byte #%11111110;--
+        .byte #%11111110;--
+        .byte #%11111110;--
+        .byte #%11111110;--
+        .byte #%11111110;--
+        .byte #%11111110;--
+        .byte #%11111110;--
+        .byte #%11111110;--
+HungerBar2
+        .byte #%11111100;--
+        .byte #%11111100;--
+        .byte #%11111100;--
+        .byte #%11111100;--
+        .byte #%11111100;--
+        .byte #%11111100;--
+        .byte #%11111100;--
+        .byte #%11111100;--
+        .byte #%11111100;--
+        .byte #%11111100;--
+HungerBar3
+        .byte #%11111000;--
+        .byte #%11111000;--
+        .byte #%11111000;--
+        .byte #%11111000;--
+        .byte #%11111000;--
+        .byte #%11111000;--
+        .byte #%11111000;--
+        .byte #%11111000;--
+        .byte #%11111000;--
+        .byte #%11111000;--
+HungerBar4
+        .byte #%11110000;--
+        .byte #%11110000;--
+        .byte #%11110000;--
+        .byte #%11110000;--
+        .byte #%11110000;--
+        .byte #%11110000;--
+        .byte #%11110000;--
+        .byte #%11110000;--
+        .byte #%11110000;--
+        .byte #%11110000;--
+HungerBar5
+        .byte #%11100000;--
+        .byte #%11100000;--
+        .byte #%11100000;--
+        .byte #%11100000;--
+        .byte #%11100000;--
+        .byte #%11100000;--
+        .byte #%11100000;--
+        .byte #%11100000;--
+        .byte #%11100000;--
+        .byte #%11100000;--
+HungerBar6
+        .byte #%11000000;--
+        .byte #%11000000;--
+        .byte #%11000000;--
+        .byte #%11000000;--
+        .byte #%11000000;--
+        .byte #%11000000;--
+        .byte #%11000000;--
+        .byte #%11000000;--
+        .byte #%11000000;--
+        .byte #%11000000;--
+HungerBar7
+        .byte #%10000000;--
+        .byte #%10000000;--
+        .byte #%10000000;--
+        .byte #%10000000;--
+        .byte #%10000000;--
+        .byte #%10000000;--
+        .byte #%10000000;--
+        .byte #%10000000;--
+        .byte #%10000000;--
+        .byte #%10000000;--
+HungerBar8
+        .byte #%00000000;--
+        .byte #%00000000;--
+        .byte #%00000000;--
+        .byte #%00000000;--
+        .byte #%00000000;--
+        .byte #%00000000;--
+        .byte #%00000000;--
+        .byte #%00000000;--
+        .byte #%00000000;--
+        .byte #%00000000;--
 
 ;------------------------------------------------
 ; Interrupt Vectors

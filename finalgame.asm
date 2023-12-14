@@ -57,6 +57,8 @@ HUNGERPF2_INTI = #%11111111
 
 HEALTH_BAR_HEIGHT = #10
 
+HEALTHBAR_COLOR = #$36
+
 ;------------------------------------------------
 ; RAM
 ;------------------------------------------------
@@ -92,7 +94,7 @@ missilesettings 	.byte
 
 framecounter	.byte
 secondscounter	.byte
-mincounter		.byte
+itercounter		.byte
 
 disastersprite		ds 2
 disastergfx			.byte
@@ -129,6 +131,8 @@ test 			.byte
 rowindex		.byte
 disasterspriteindex		.byte
 
+reachedlimit	.byte
+
 ; x positioning stuff
 disasterxpos	.byte
 foodxpos		.byte
@@ -137,6 +141,11 @@ hungerPF0		.byte
 hungerPF1		.byte
 hungerPF2		.byte
 hungerbarcounter 	.byte
+healthbarcolor		.byte
+
+hungerPF0counter 	.byte
+hungerPF1counter	.byte
+hungerPF2counter 	.byte
 
 	echo [(* - $80)]d, " RAM bytes used"
 
@@ -596,8 +605,23 @@ DrawScreen	; setting x positions
 	sta		PF2 ; if islands are "displaying," turn off
 	sta 	COLUPF
 	sta 	ENAM0
+	lda 	#HEALTHBAR_COLOR
+	sta 	healthbarcolor
+	
+;	sta 	WSYNC
+;	sta 	WSYNC
+;	sta 	WSYNC
+;	sta 	WSYNC
 
 	; add hunger bar here
+;	ldx 	#HEALTH_BAR_HEIGHT-4
+.drawHealthBar
+;	lda 	hungerPF0	
+;	sta 	PF0
+;	lda 	hungerPF1
+;	sta 	PF1
+;	lda 	hungerPF2
+;	sta		PF2
 	
 	dex
 	sta 	WSYNC
@@ -638,52 +662,56 @@ DrawScreen	; setting x positions
 
 .checkFrameCounter
 	lda 	framecounter
-	cmp 	#$60 			; 60 fps 
+	cmp 	#$3C 			; 60 fps ; nts - #$4C = 60 in hex
 	bne		.noAddSec
-;	inc 	secondscounter	; old way of increasing count
-	sed 	; set decimal flag
-	clc		
-	lda 	secondscounter	; saving everything in decimal mode, bcd
-	adc 	#$01			
-	sta 	secondscounter
-	cld						; decimal mode off
+	
+	inc 	secondscounter	; old way of increasing count
+;	sed 	; set decimal flag
+;	clc		
+;	lda 	secondscounter	; saving everything in decimal mode, bcd
+;	adc 	#$01			
+;	sta 	secondscounter
+;	cld						; decimal mode off
 	
 	lda 	#0
 	sta 	framecounter
+	jmp 	.noAddIter
 	
 .noAddSec
 
-	lda 	secondscounter		; since intializing secondscounter as 1, count up to 61
-	cmp 	#$61				; since num is bcd
-	bne 	.noAddMin
-;	inc 	mincounter			; old way
-	sed 	
-	clc
-	lda 	mincounter
-	adc 	#$01
-	sta 	mincounter
-	cld
+	lda 	secondscounter		; 
+	cmp 	#$0A				; nts: A = 10 in hex
+	bne 	.noAddIter
+	
+	inc 	itercounter			; old way
+	
+	inc 	reachedlimit		; should equal 1
+;	sed 	
+;	clc
+;	lda 	itercounter
+;	adc 	#$01
+;	sta 	itercounter
+;	cld
 	
 	lda 	#0
 	sta 	secondscounter
 		
-.noAddMin
+.noAddIter
 
 .changeGame 
-	lda 	mincounter
-	cmp 	#0
-	bne		.phase2	; after a min. of gameplay, the game should speed up a bit (todo)
+;	lda 	itercounter
+;	cmp 	#0
+;	bne		.phase2	; after a min. of gameplay, the game should speed up a bit (todo)
 	
 ;	lda 	secondscounter
 ;	cmp 	#0 
 ;	beq 	.notMultipleOf10 	; I know its bad lol
 	
-	lda 	#<secondscounter	; if the low byte is all 0, then the bcd is a multiple of 10
-;	and 	#%00001111 ; checking if counter is a multiple of 10 [IGNORE THIS LINE, OLD]
-	bne 	.notMultipleOf10
+	lda 	reachedlimit	; is 1 or 0
+	beq 	.not10			; branch if 0 -> didn't reach 10
 	
 	ldx 	rowindex		; 
-	cmp 	#$0E 			; 14 in hex
+	cpx 	#$0F 			; 14 in hex
 							; without lines 658 and 660 the volcanos appear for a hot second
 							; and then volcanos and food disappear???
 	beq 	.skipTimer
@@ -698,14 +726,16 @@ DrawScreen	; setting x positions
 	lda 	DisasterYCoords,x
 	sta 	disasterY
 	
-	lda 	#$FF			; commenting these out makes no difference in results
-	sta 	drawmissile
+;	lda 	#$FF			; commenting these out makes no difference in results
+;	sta 	drawmissile
+	lda 	#0
+	sta 	reachedlimit
 	
 	inc 	rowindex
 	
 ;	cld 	; CLEAR DECIMAL FLAG opcode
 	
-.notMultipleOf10
+.not10
 	
 .phase2
 ;	lda 	secondscounter		; speed up game - if timers starts working
@@ -719,6 +749,67 @@ DrawScreen	; setting x positions
 
 
 .skipTimer
+
+; ==============================================================================
+; UPDATE THE HEALTH BAR (hunger bar)
+; ==============================================================================
+
+;.updateHealthBar
+;	lda 	secondscounter
+;	cmp 						; add in comparison later
+
+;.isTimeToDecrease	
+	; decrease hungerbarcounter here, or most likely at the end of this thing
+;	ldx 	hungerbarcounter
+;	
+;	lda 	hungerPF2counter
+;	cmp 	#7					; 7 decimal = 7 hex
+;	bne 	.updateHungerPF2
+;	lda 	hungerPF1counter
+;	cmp 	#7 
+;	bne 	.updateHungerPF1
+;	lda 	hungerPF0counter
+;	cmp 	#3
+;	bne 	.updateHungerPF0
+;	
+;	lda 	#1
+;	sta 	gameover
+;
+;.updateHungerPF2
+;	ldx 	hungerPF2counter
+;	lda 	HealthBarPF2,x
+;	sta 	hungerPF2
+
+
+
+;.updateHungerPF1
+
+
+
+;.updateHungerPF0
+
+
+;	lda		HealthBarPF0,x
+;	sta 	hungerPF0
+;	
+;	lda 	HealthBarPF1,x
+;	sta 	hungerPF1
+	
+
+
+;	cpx 	#$14				; 20 in decimal, since PF 1 and 2 is 1 byte = 8 bits,
+								; PF0 is 4 bits = 20 bits
+;	beq 	.setGameOverHunger
+	
+;	dec 	hungerbarcounter
+	
+	
+;.setGameOverHunger
+	
+	
+;.endHungerBarCheck
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; end ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 .waitForOverscan
 	lda     INTIM
@@ -1600,29 +1691,29 @@ HealthBarPF1
 	.byte #%11111110
 	.byte #%11111100
 	.byte #%11111000
-	.byte #%11110000
+	.byte #%11110000; 4
 	.byte #%11100000
 	.byte #%11000000
 	.byte #%10000000
-	.byte #%00000000
+	.byte #%00000000; 8
 	
 HealthBarPF2
 ;	.byte #%11111111
 	.byte #%11111110
 	.byte #%11111100
 	.byte #%11111000
-	.byte #%11110000
+	.byte #%11110000; 4
 	.byte #%11100000
 	.byte #%11000000
 	.byte #%10000000
-	.byte #%00000000
+	.byte #%00000000; 8
 	
 HealthBarPF0
 ;	.byte #%11110000
 	.byte #%11100000
 	.byte #%11000000
 	.byte #%10000000
-	.byte #%00000000 
+	.byte #%00000000; 4 
 
 ;------------------------------------------------
 ; Interrupt Vectors

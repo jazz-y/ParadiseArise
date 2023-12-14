@@ -55,7 +55,7 @@ HUNGERPF0_INIT = #%11110000
 HUNGERPF1_INIT = #%11111111
 HUNGERPF2_INTI = #%11111111
 
-HEALTH_BAR_HEIGHT = #20
+HEALTH_BAR_HEIGHT = #12
 
 HEALTHBAR_COLOR = #$36
 
@@ -641,6 +641,10 @@ DrawScreen	; setting x positions
 	sta 	WSYNC
 	sta 	WSYNC
 	sta 	WSYNC
+	sta 	WSYNC
+	sta 	WSYNC
+	sta 	WSYNC
+	sta 	WSYNC
 
 	; add hunger bar here
 	ldx 	#HEALTH_BAR_HEIGHT ; 10 scan lines + 4 (from above) = 14
@@ -651,22 +655,22 @@ DrawScreen	; setting x positions
 	lda 	hungerbargfx
 	sta 	PF1
 	
-;	ldy 	#$02
-;.wasteLoop
-;	dey
-;	bne 	.wasteLoop
+	ldy 	#$05
+.wasteLoop
+	dey
+	bne 	.wasteLoop
 ;	nop
 ;	nop
 	
-;	lda 	#0
-;	sta 	PF0		; later - only want to show health bar on one side
+	lda 	#0
+	sta 	PF1		; later - only want to show health bar on one side
 
 	
 	dex
 	sta 	WSYNC
 	bne 	.drawHealthBar
 	
-	ldx 	#$02
+	ldx 	#$0F
 .lastSpacer
 	lda 	#0
 	sta 	PF0
@@ -719,12 +723,6 @@ DrawScreen	; setting x positions
 	
 	inc 	secondscounter	; old way of increasing count
 	inc 	hungersecondscounter
-;	sed 	; set decimal flag
-;	clc		
-;	lda 	secondscounter	; saving everything in decimal mode, bcd
-;	adc 	#$01			
-;	sta 	secondscounter
-;	cld						; decimal mode off
 	
 	lda 	#0
 	sta 	framecounter
@@ -768,7 +766,7 @@ DrawScreen	; setting x positions
 ; 	IMPORTANT below
 ; =========================================================================	
 
-	cpx 	#$0F 			; 14 in hex  - CHANGE LATER ONCE MORE VALUES ARE ADDED
+	cpx 	#$13 			; 14 in hex  - CHANGE LATER ONCE MORE VALUES ARE ADDED
 							; TO X AND Y TABLES
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	beq 	.skipTimer
@@ -799,9 +797,8 @@ DrawScreen	; setting x positions
 .resetDisasterIter
 	lda 	#0
 	sta 	disasteriter
+	
 .endDisasterSpriteUpdate
-;	lda 	#$FF			; commenting these out makes no difference in results
-;	sta 	drawmissile
 	lda 	#0
 	sta 	reachedlimit
 	
@@ -1705,17 +1702,22 @@ FoodXCoords
 	.byte #6
 	.byte #4
 	.byte #8
-	.byte #8;
+	.byte #8;5
 	.byte #2
 	.byte #6
 	.byte #2
 	.byte #8
-	.byte #2;
+	.byte #2;10
 	.byte #4
 	.byte #8
 	.byte #8
 	.byte #2
-	.byte #8;
+	.byte #8;15
+	.byte #2
+	.byte #4
+	.byte #8
+	.byte #4
+	.byte #2;20
 	
 FoodYCoords
 	.byte #75
@@ -1733,6 +1735,12 @@ FoodYCoords
 	.byte #31
 	.byte #97
 	.byte #75;
+	.byte #9
+	.byte #97
+	.byte #31
+	.byte #97
+	.byte #31
+
 
 DisasterXCoords
 	.byte #4
@@ -1750,6 +1758,11 @@ DisasterXCoords
 	.byte #4
 	.byte #6
 	.byte #6;
+	.byte #4
+	.byte #4
+	.byte #6
+	.byte #4
+	.byte #6
 
 DisasterYCoords
 	.byte #34
@@ -1767,6 +1780,11 @@ DisasterYCoords
 	.byte #78
 	.byte #56
 	.byte #100;
+	.byte #56
+	.byte #34
+	.byte #56
+	.byte #78
+	.byte #56
 
 HungerBarPF1
 	.byte #%11111111

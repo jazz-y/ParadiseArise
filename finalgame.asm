@@ -21,9 +21,9 @@ BLUE = #$AC
 SAM_HEIGHT = #9 ; actual is 10
 ; actual island height is 25
 ISLAND_HEIGHT = #25
-SAM_INITIAL_Y = #90
-ISLAND_ROWS = #3
-SPACER_HEIGHT = #9
+SAM_INITIAL_Y = #80
+;ISLAND_ROWS = #3
+;SPACER_HEIGHT = #9
 LAST_SPACER_HEIGHT = #26 ; make this half later, will probably need
 						 ; 2 scan lines
 
@@ -36,20 +36,20 @@ MISSILE_HEIGHT = #3 ; actual is 6
 
 TOP_SPACER_HEIGHT = #10
 
-MISSILE_INITIAL_Y = #9
+MISSILE_INITIAL_Y = #53
 
-DISASTER_INITIAL_Y = #100
+DISASTER_INITIAL_Y = #34
 
 ; For DISASTER_XPOS_INIT:
 ; 7 works best for volcanos right aligned
 ; 5 for left align
 
-DISASTER_XPOS_INIT = #4 ; 
+DISASTER_XPOS_INIT = #6 ; 
 
 ; For FOOD_XPOS_INIT:
 ; 2 works best (not very well) for missile first island
 
-FOOD_XPOS_INIT = #8
+FOOD_XPOS_INIT = #4
 
 ;------------------------------------------------
 ; RAM
@@ -116,8 +116,12 @@ gameover 		.byte
 addtohungerbar 	.byte
 maincounter 	.byte
 resetonce 		.byte
+hungercounter	.byte
 
 test 			.byte
+
+rowindex		.byte
+disasterspriteindex		.byte
 
 ; x positioning stuff
 disasterxpos	.byte
@@ -140,12 +144,12 @@ Start
 ;------------------------------------------------
 ; INITIALIZE GAME
 ;------------------------------------------------
-;	ldx 	#12
-;.initRAM
-;	lda 	IslandSprite,x
-;	sta 	islandsprite,x
-;	dex
-;	bne 	.initRAM
+	ldx 	#12
+.initRAM
+	lda 	IslandSprite,x
+	sta 	islandsprite,x
+	dex
+	bne 	.initRAM
 
 ; Loading Sam gfx
 	lda 	#<SamRightGfx
@@ -191,8 +195,8 @@ Start
 	lda 	#SAM_RANGE
 	sta 	samrange
 	
-	lda 	#SPACER_HEIGHT
-	sta 	spacerheight
+;	lda 	#SPACER_HEIGHT
+;	sta 	spacerheight
 	
 	lda 	#MISSILE_INITIAL_Y
 	sta 	missileY
@@ -203,8 +207,8 @@ Start
 	lda 	#DISASTER_XPOS_INIT
 	sta 	disasterxpos
 	
-;	lda 	#0
-;	sta 	PF0
+	lda 	#1
+	sta 	secondscounter
 
 ;------------------------------------------------
 ; Vertical Blank
@@ -261,7 +265,7 @@ CheckJoyDown
 	bne 	.endCheckJoyDown
 	lda 	samY
 	; add some sort of comparison to sam range to control where Sam can go
-	cmp 	#SAM_HEIGHT+2 ; idea: check to see if sam has reached bottom limit
+	cmp 	#SAM_HEIGHT+3 ; idea: check to see if sam has reached bottom limit
 	beq		.endCheckJoyDown
 	lda 	#<SamDownGfx
 	sta 	samrestinggfx
@@ -588,7 +592,8 @@ DrawScreen	; setting x positions
 	sta 	WSYNC
 	bne 	.finalspacer
 	
-	inc 	framecounter
+	inc 	framecounter ; <------------------------- adding to frame counter after every
+													; frame possible is drawn 
 	
 	jmp 	.endAllKernels
 	
@@ -619,23 +624,66 @@ DrawScreen	; setting x positions
 
 .checkFrameCounter
 	lda 	framecounter
-	cmp 	#60 
-	beq		.noAddSec
+	cmp 	#60 			; 60 fps 
+	bne		.noAddSec
 	inc 	secondscounter
 	lda 	#0
 	sta 	framecounter
 	
 .noAddSec
 
-	lda 	secondscounter
-	cmp 	#60
+	lda 	secondscounter		; since intializing secondscounter as 1, count up to 61
+	cmp 	#61
 	bne 	.noAddMin
 	inc 	mincounter
-	lda 	#0
+	lda 	#1
 	sta 	secondscounter
 		
 .noAddMin
 
+.changeGame ; commented out 645 - 647
+;	lda 	mincounter
+;	cmp 	#0
+;	bne		.phase2	; after a min. of gameplay, the game should speed up a bit (todo)
+	
+;	lda 	secondscounter
+;	cmp 	#0 
+;	beq 	.notMultipleOf10 	; I know its bad lol
+	
+	lda 	secondscounter
+	and 	#%00001111 ; checking if counter is a multiple of 10 (FOR NOW)
+	bne 	.notMultipleOf10
+	
+	ldx 	rowindex
+	cmp 	#14 			; without lines 658 and 660 the volcanos appear for a hot second
+							; and then volcanos and food disappear???
+	beq 	.skipTimer
+	
+	lda 	FoodXCoords,x
+	sta 	foodxpos
+	lda 	FoodYCoords,x
+	sta 	missileY
+	
+	lda 	DisasterXCoords,x
+	sta 	disasterxpos
+	lda 	DisasterYCoords,x
+	sta 	disasterY
+	
+;	lda 	#$FF			; commenting these out makes no difference in results
+;	sta 	drawmissile
+	
+	inc 	rowindex
+	
+.notMultipleOf10
+	
+.phase2
+;	lda 	secondscounter
+;	and 	#%00000111
+;	bne 	.notMultipleOf8
+	
+	
+.notMultipleOf8
+	
 
 
 
@@ -1514,7 +1562,36 @@ DisasterYCoords
 	.byte #78
 	.byte #78
 	.byte #56
-	.byte #100
+	.byte #100;
+
+HealthBarPF1
+	.byte #%11111111
+	.byte #%11111110
+	.byte #%11111100
+	.byte #%11111000
+	.byte #%11110000
+	.byte #%11100000
+	.byte #%11000000
+	.byte #%10000000
+	.byte #%00000000
+	
+HealthBarPF2
+	.byte #%11111111
+	.byte #%11111110
+	.byte #%11111100
+	.byte #%11111000
+	.byte #%11110000
+	.byte #%11100000
+	.byte #%11000000
+	.byte #%10000000
+	.byte #%00000000
+	
+HealthBarPF0
+	.byte #%11110000
+	.byte #%11100000
+	.byte #%11000000
+	.byte #%10000000
+	.byte #%00000000 
 
 ;------------------------------------------------
 ; Interrupt Vectors

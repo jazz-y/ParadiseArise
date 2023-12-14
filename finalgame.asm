@@ -59,6 +59,10 @@ HEALTH_BAR_HEIGHT = #20
 
 HEALTHBAR_COLOR = #$36
 
+GAME_OVER = #0
+GAME_START = #0
+GAME_PLAYING = #1
+
 ;------------------------------------------------
 ; RAM
 ;------------------------------------------------
@@ -151,6 +155,8 @@ hungerPF2counter 	.byte
 
 hungerbargfx		.byte
 
+disasteriter		.byte 
+
 	echo [(* - $80)]d, " RAM bytes used"
 
 ;------------------------------------------------
@@ -206,6 +212,9 @@ Start
 	sta 	disastercolors
 	lda 	#>VolcanoColors
 	sta 	disastercolors+1
+	
+	lda 	#1
+	sta 	disasteriter
 
 	
 	lda 	#DISASTER_HEIGHT
@@ -218,6 +227,9 @@ Start
 	
 	lda 	#SAM_RANGE
 	sta 	samrange
+	
+	lda 	#1
+	sta 	disasteriter
 	
 ;	lda 	#SPACER_HEIGHT
 ;	sta 	spacerheight
@@ -661,6 +673,8 @@ DrawScreen	; setting x positions
 	sta 	PF1
 	sta 	PF2
 	sta 	COLUPF
+	sta 	GRP0
+	sta 	GRP1
 	
 
 	
@@ -691,13 +705,12 @@ DrawScreen	; setting x positions
 ; TIMER SETUP
 ; ===============================================
 
-	inc 	framecounter ; <------------------------- adding to frame counter after every
-													; frame possible is drawn 
-	
 .startTimer 
 ;	lda 	resetonce		; if not reset once, then don't start timer
 ;	beq 	.skipTimer		; for implementing screensaver later
 
+	inc 	framecounter ; <------------------------- adding to frame counter after every
+													; frame possible is drawn 
 
 .checkFrameCounter
 	lda 	framecounter
@@ -770,6 +783,23 @@ DrawScreen	; setting x positions
 	lda 	DisasterYCoords,x
 	sta 	disasterY
 	
+.updateDisasterSprites
+	ldx 	disasteriter
+	lda 	DisasterSprites,x
+	sta 	disastersprite
+	lda 	DisasterColors,x
+	sta 	disastercolors
+	
+	lda 	disasteriter
+	cmp 	#3
+	beq 	.resetDisasterIter
+	inc		disasteriter
+	jmp 	.endDisasterSpriteUpdate
+	
+.resetDisasterIter
+	lda 	#0
+	sta 	disasteriter
+.endDisasterSpriteUpdate
 ;	lda 	#$FF			; commenting these out makes no difference in results
 ;	sta 	drawmissile
 	lda 	#0
@@ -846,7 +876,9 @@ DrawScreen	; setting x positions
 .noHungerDecrease
 		
 .endHungerBarDecrease
+
 	
+.endDisasterUpdate
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; end ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -1186,6 +1218,17 @@ PersimmmonSprite
 ;---End Graphics Data---
 
 DisasterSprites
+	.byte 	<VolcanoSprite
+	.byte 	<TornadoSprite
+	.byte 	<LightningSprite
+	.byte 	<AlienSprite
+	
+DisasterColors
+	.byte 	<VolcanoColors
+	.byte 	<TornadoColors
+	.byte 	<LightningColors
+	.byte 	<AlienColors
+
 VolcanoSprite
         .byte #%00000000;$40
         .byte #%11101111;$40
@@ -1276,7 +1319,7 @@ PersimmonColors
         .byte #$D0;
 ;
 		
-DisasterColors
+
 VolcanoColors
         .byte #$40;
         .byte #$40;
@@ -1730,11 +1773,11 @@ HungerBarPF1
 	.byte #%11111110
 	.byte #%11111100
 	.byte #%11111000
-	.byte #%11110000
+	.byte #%11110000;5, index 4
 	.byte #%11100000
 	.byte #%11000000
 	.byte #%10000000
-	.byte #%00000000
+	.byte #%00000000;9, index 8
 
 	
 HungerBarPF2

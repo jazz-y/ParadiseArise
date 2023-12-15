@@ -14,8 +14,6 @@
 BLACK = #$00
 BLUE = #$AC
 
-; Sam_range = 220 / 2 = 110
-
 ; height is the true height - 1.
 ; Sam actual height is 22 px
 SAM_HEIGHT = #9 ; actual is 10
@@ -40,6 +38,8 @@ MISSILE_INITIAL_Y = #53
 
 DISASTER_INITIAL_Y = #34
 
+FRAME_DELAY = #2
+
 ; For DISASTER_XPOS_INIT:
 ; 7 works best for volcanos right aligned
 ; 5 for left align
@@ -51,9 +51,7 @@ DISASTER_XPOS_INIT = #6 ;
 
 FOOD_XPOS_INIT = #4
 
-HUNGERPF0_INIT = #%11110000
 HUNGERPF1_INIT = #%11111111
-HUNGERPF2_INTI = #%11111111
 
 HEALTH_BAR_HEIGHT = #12
 
@@ -63,6 +61,7 @@ GAME_OVER = #0
 GAME_START = #0
 GAME_PLAYING = #1
 
+
 ;------------------------------------------------
 ; RAM
 ;------------------------------------------------
@@ -70,7 +69,6 @@ GAME_PLAYING = #1
     ORG     $80
 
 bgcolor		.byte
-frame		.byte
 ; Tophat Sam graphics stuff
 samrestinggfx	ds 2
 samgfx			.byte
@@ -79,7 +77,6 @@ samcolor		.byte
 samcolorsgfx 	ds 2
 samY 			.byte
 samrange 		.byte
-samtemp			.byte
 
 drawsam			.byte
 
@@ -91,7 +88,6 @@ islandsprite	.byte
 islandcolorsgfx ds 2
 
 ; spacer graphics stuff
-spacerheight	.byte
 spacercounter 	.byte
 islandcounter	.byte
 missilesettings 	.byte
@@ -105,35 +101,12 @@ disastergfx			.byte
 disastercolors		ds 2
 disastercolorsgfx	.byte
 
-foodsprite			ds 2
-foodgfx				.byte
-foodcolorgfx		.byte
-
-; title screen
-
-PF0Top 			ds 2
-PF1Top			ds 2
-PF2Top 			ds 2
-
-PF0Bottom 		ds 2
-PF1Bottom 		ds 2
-PF2Bottom 		ds 2
-
 ; general 
-counter 		.byte
-hasbeenreset	.byte	; for checking if the screen was reset the first time
 drawmissile		.byte 
 missileY		.byte
-gameover 		.byte
-addtohungerbar 	.byte
-maincounter 	.byte
-resetonce 		.byte
-hungercounter	.byte
-
-test 			.byte
+gamestate 		.byte
 
 rowindex		.byte
-disasterspriteindex		.byte
 
 reachedlimit	.byte
 hungersecondscounter	.byte
@@ -143,19 +116,16 @@ foodcollected	.byte
 disasterxpos	.byte
 foodxpos		.byte
 
-hungerPF0		.byte
 hungerPF1		.byte
-hungerPF2		.byte
 hungerbarcounter 	.byte
 healthbarcolor		.byte
-
-hungerPF0counter 	.byte
-hungerPF1counter	.byte
-hungerPF2counter 	.byte
 
 hungerbargfx		.byte
 
 disasteriter		.byte 
+
+framedelay			.byte
+
 
 	echo [(* - $80)]d, " RAM bytes used"
 
@@ -192,16 +162,6 @@ Start
 	lda 	#>SamColors
 	sta 	samcolorsgfx+1
 	
-	
-; loading missile gfx
-
-	lda 	#<CoconutSprite
-	sta 	foodgfx
-	lda 	#>CoconutSprite
-	sta 	foodgfx+1
-;	lda 	#<CoconutColor,x
-;	sta 	foodcolorgfx
-	
 ; Loading disaster gfx
 	lda 	#<VolcanoSprite
 	sta 	disastersprite
@@ -231,9 +191,6 @@ Start
 	lda 	#1
 	sta 	disasteriter
 	
-;	lda 	#SPACER_HEIGHT
-;	sta 	spacerheight
-	
 	lda 	#MISSILE_INITIAL_Y
 	sta 	missileY
 	
@@ -242,12 +199,13 @@ Start
 	
 	lda 	#DISASTER_XPOS_INIT
 	sta 	disasterxpos
+
+	lda 	#FRAME_DELAY		; later
+	sta 	framedelay
 	
 	lda 	#%11111111
 	sta 	hungerPF1
-	sta 	hungerPF2
-	lda 	#%11110000
-	sta 	hungerPF0
+
 	
 	lda 	#%11111111
 	sta 	hungerbargfx
@@ -281,14 +239,82 @@ MainLoop
 	lda 	#%00000001 ;reflecting playfield ONLY DONT TOUCH
 	sta 	CTRLPF
 
+;	lda 	gamestate
+;	cmp 	
+
+.checkGameState
+	lda 	gamestate
+	cmp 	#GAME_OVER
+	bne 	.endCheckState
+
 .checkReset
 	lda 	#%00000001
 	bit 	SWCHB
-	bne		Next
+	bne		.endCheckState
 	; LATER - add logic to determine if loading the title screen or the game
-	jmp		Start
+.resetGame
+
+	lda 	#DISASTER_INITIAL_Y
+	sta 	disasterY
+
+	lda 	#MISSILE_INITIAL_Y
+	sta 	missileY
 	
-Next
+	lda 	#FOOD_XPOS_INIT
+	sta 	foodxpos
+	
+	lda 	#DISASTER_XPOS_INIT
+	sta 	disasterxpos
+	
+	lda 	#GAME_PLAYING
+	sta 	gamestate
+	
+	lda 	#1
+	sta 	disasteriter
+	
+	lda 	#%11111111
+	sta 	hungerbargfx
+	
+	lda 	#SAM_INITIAL_Y
+	sta 	samY
+	
+	lda 	#<VolcanoSprite
+	sta 	disastersprite
+	lda 	#>VolcanoSprite
+	sta 	disastersprite+1
+	
+	lda 	#<VolcanoColors
+	sta 	disastercolors
+	lda 	#>VolcanoColors
+	sta 	disastercolors+1
+	
+	lda 	#<SamRightGfx
+	sta 	samrestinggfx
+	lda 	#>SamRightGfx
+	sta 	samrestinggfx+1
+	
+	lda 	#<SamColors
+	sta 	samcolorsgfx
+	lda 	#>SamColors
+	sta 	samcolorsgfx+1
+	
+	lda 	#1
+	sta 	secondscounter
+	sta 	disasteriter
+	
+	lda 	#0 
+	sta 	framecounter
+	sta 	foodcollected
+	sta 	reachedlimit
+	sta 	rowindex
+	
+	lda 	#BLUE
+	sta 	bgcolor
+	
+.endCheckReset
+	jmp 	.waitForVBlank
+	
+.endCheckState
 
 CheckJoyUp
 	lda 	#%00010000
@@ -297,13 +323,25 @@ CheckJoyUp
 	lda 	samY
 	cmp 	#SAM_RANGE-2
 	beq		.endCheckJoyUp
+	
+	lda 	framedelay		;later if time allows
+	bne 	.delayJoyUp
+	
 	lda 	#<SamUpGfx
 	sta 	samrestinggfx
 	lda 	#>SamUpGfx
 	sta 	samrestinggfx+1
 ;	inc 	samY
 	inc 	samY
+	
+;	lda 	#FRAME_DELAY
+;	sta 	framedelay
+	
+.delayJoyUp
+;	dec 	framedelay
+	
 .endCheckJoyUp
+
 CheckJoyDown
 	lda 	#%00100000
 	bit 	SWCHA
@@ -312,17 +350,27 @@ CheckJoyDown
 	; add some sort of comparison to sam range to control where Sam can go
 	cmp 	#SAM_HEIGHT+3 ; idea: check to see if sam has reached bottom limit
 	beq		.endCheckJoyDown
+	
+	lda 	framedelay
+	bne		.delayJoyDown
+	
 	lda 	#<SamDownGfx
 	sta 	samrestinggfx
 	lda 	#>SamDownGfx
 	sta 	samrestinggfx+1
 	dec 	samY
 ;	dec 	samY
+.delayJoyDown
+
 .endCheckJoyDown
+
 CheckJoyLeft
 	lda 	#%01000000
 	bit 	SWCHA
 	bne 	.noMoveLeft	; if not using left joystick, don't wrtie to hmove (don't make object move)
+	
+	lda 	framedelay
+	bne		.noMoveLeftFrameDelay
 	
 	lda 	#<SamRightGfx
 	sta 	samrestinggfx
@@ -333,11 +381,17 @@ CheckJoyLeft
 	sta 	REFP0
 	lda 	#%00010000 ; horizontal motion from table (stella guide)
 	sta 	HMP0	   ; put in HMP0, strobe HMOVE after WSYNC to activate
-	jmp 	.waitForVBlank
+	jmp 	.endCheckJoyRight
 
 .noMoveLeft
 	lda 	#0
 	sta 	HMP0
+	jmp 	CheckJoyRight
+	
+.noMoveLeftFrameDelay
+	lda 	#0 
+	sta 	HMP0
+	jmp 	.endCheckJoyRight
 
 .endCheckJoyLeft
 	
@@ -346,6 +400,9 @@ CheckJoyRight
 	lda		#%10000000
 	bit 	SWCHA
 	bne 	.noMoveRight
+	
+	lda 	framedelay
+	bne		.noMoveRight
 	
 	lda 	#<SamRightGfx
 	sta 	samrestinggfx
@@ -362,6 +419,18 @@ CheckJoyRight
 	sta 	HMP0
 	
 .endCheckJoyRight
+
+	lda 	framedelay
+	bne 	.decFrameDelay ; if frame delay is not 0, then decrement framedelay
+	
+	lda 	#FRAME_DELAY ; if frame delay is 0, reset it to starting framedelay
+	sta 	framedelay
+	jmp 	.skipFrameDelayReset
+	
+.decFrameDelay
+	dec 	framedelay
+
+.skipFrameDelayReset
 
 .checkSpaceBar		; left joystick fire
 	lda 	#%10000000
@@ -390,10 +459,10 @@ CheckJoyRight
 .checkCollisions
 .checkDisasterCollisions
 	lda 	CXPPMM
-	and 	#%01000000
-	beq 	.noDisasterCollision	; branch if equal to 0
-	lda 	#1
-	sta 	gameover
+	and 	#%10000000				; changed this
+	beq 	.noDisasterCollision	; branch if equal to 0 -> no collision
+	lda 	#GAME_OVER
+	sta 	gamestate
 
 .noDisasterCollision
 
@@ -439,8 +508,8 @@ CheckJoyRight
 	jmp 	.endPFCollisionCheck
 	
 .notJumping
-	lda 	#1
-	sta 	gameover
+	lda 	#GAME_OVER
+	sta 	gamestate
 	
 
 .endPFCollisionCheck
@@ -489,7 +558,6 @@ DrawScreen	; setting x positions
 	; total time: 2(n-1) + 7 (3 to load, 2 when last not taken, 2 for last dex)
 	; simplified: 2n + 5 cycles
 	sta 	RESP1
-	
 		
 	ldx 	#SAM_RANGE-1 ; this will be the playfield "range"
 	sta 	WSYNC
@@ -541,7 +609,6 @@ DrawScreen	; setting x positions
 	lda 	(samrestinggfx),y
 	sta 	samgfx
 	lda		SamColors,y
-;	lda 	(samcolorsgfx),y
 	sta 	samcolor
 
 	dec		drawsam
@@ -609,21 +676,13 @@ DrawScreen	; setting x positions
 	
 .endOfPlayfield
 	dex
-;	stx 	maincounter
 
-;	sta 	WSYNC
-;	lda 	maincounter 
-;	cmp 	#0
-;	bne 	.endmainstuff
 	beq		.endmainstuff
 	jmp		.drawPlayfield
-;	bne		.drawPlayfield 	; causing branch out of range error when including positioning stuff
-;	jmp 	.drawPlayfield
+
 .endmainstuff
 	; original is 42
 	
-;	ldy 	#LAST_SPACER_HEIGHT-4
-; Bottom part - score will go here
 .finalspacer
 	lda 	#0
 	sta 	PF1
@@ -709,9 +768,14 @@ DrawScreen	; setting x positions
 ; TIMER SETUP
 ; ===============================================
 
+	lda 	gamestate
+	cmp 	#GAME_OVER
+	bne		.startTimer
+	jmp 	MainLoop
+
+
 .startTimer 
-;	lda 	resetonce		; if not reset once, then don't start timer
-;	beq 	.skipTimer		; for implementing screensaver later
+;	beq 	.skipTimer		; for implementing screensaver
 
 	inc 	framecounter ; <------------------------- adding to frame counter after every
 													; frame possible is drawn 
@@ -737,27 +801,13 @@ DrawScreen	; setting x positions
 	inc 	itercounter			; not used
 	
 	inc 	reachedlimit		; should equal 1
-;	sed 	
-;	clc
-;	lda 	itercounter
-;	adc 	#$01
-;	sta 	itercounter
-;	cld
 	
 	lda 	#0
 	sta 	secondscounter
 		
 .noAddIter
 
-.changeGame 
-;	lda 	itercounter
-;	cmp 	#0
-;	bne		.phase2	; after a min. of gameplay, the game should speed up a bit (todo)
-	
-;	lda 	secondscounter
-;	cmp 	#0 
-;	beq 	.notMultipleOf10 	; I know its bad lol
-	
+.changeGame 	
 	lda 	reachedlimit	; is 1 or 0
 	beq 	.not10			; branch if 0 -> didn't reach 10
 	
@@ -766,10 +816,10 @@ DrawScreen	; setting x positions
 ; 	IMPORTANT below
 ; =========================================================================	
 
-	cpx 	#$13 			; 14 in hex  - CHANGE LATER ONCE MORE VALUES ARE ADDED
+	cpx 	#$13 			; 19 in hex  - CHANGE ONCE MORE VALUES ARE ADDED
 							; TO X AND Y TABLES
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	beq 	.skipTimer
+	beq 	.setWin
 	
 	lda 	FoodXCoords,x
 	sta 	foodxpos
@@ -805,10 +855,16 @@ DrawScreen	; setting x positions
 	inc 	rowindex
 	
 .not10
-	
+	jmp 	.endStuffAbove
 ;.phase2
 
-.skipTimer
+.setWin
+	lda 	#GAME_OVER
+	sta 	gamestate
+	lda 	#$C8
+	sta 	bgcolor
+
+.endStuffAbove
 
 ; ==============================================================================
 ; UPDATE THE HUNGER BAR (hunger bar)
@@ -867,8 +923,8 @@ DrawScreen	; setting x positions
 	jmp 	.noHungerDecrease
 
 .setGameOverStarve
-	lda		#1
-	sta 	gameover
+	lda		#GAME_OVER
+	sta 	gamestate
 		
 .noHungerDecrease
 		

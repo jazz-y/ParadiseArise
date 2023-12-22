@@ -11,3 +11,6 @@ Avoid the disasters, don't fall into the water, and keep your hunger bar from em
 partner in crime finds you. 
 
 Don't let this be your last escapade. Good luck, Tophat Sam!
+
+To play, download the binary (finalgame.bin) and download the version of the Stella emulator that's compatible for your system
+at https://stella-emu.github.io/downloads.html. Navigate to the location of the binary in the emulator and play!
